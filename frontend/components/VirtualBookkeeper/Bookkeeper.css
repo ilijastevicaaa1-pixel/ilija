@@ -1,0 +1,45 @@
+.bookkeeper-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  min-height: 220px;
+}
+
+.bookkeeper-avatar {
+  width: 140px;
+  height: auto;
+  transition: filter 0.2s;
+}
+
+.bookkeeper-bubble {
+  position: absolute;
+  top: 0;
+  left: 120px;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+  padding: 12px 18px;
+  font-size: 1rem;
+  color: #222;
+  min-width: 120px;
+  z-index: 2;
+  animation: bubble-in 0.3s;
+}
+
+@keyframes bubble-in {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.state-thinking .bookkeeper-avatar {
+  filter: grayscale(0.5) brightness(0.9);
+}
+
+.state-happy .bookkeeper-avatar {
+  filter: hue-rotate(30deg) brightness(1.1);
+}
+
+.state-confused .bookkeeper-avatar {
+  filter: grayscale(0.7) brightness(0.8);
+}

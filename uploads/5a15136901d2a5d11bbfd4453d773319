@@ -1,0 +1,3 @@
+date,description,amount,account,type
+2024-01-01,Prva uplata,1000,123-456,credit
+2024-01-02,Druga uplata,500,123-456,debit

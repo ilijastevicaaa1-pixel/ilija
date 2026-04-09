@@ -1,0 +1,12 @@
+<svg width="120" height="140" viewBox="0 0 120 140" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="120" height="140" rx="18" fill="#e0e7ef"/>
+  <ellipse cx="60" cy="60" rx="38" ry="48" fill="#f5e9d7"/>
+  <ellipse cx="60" cy="100" rx="28" ry="18" fill="#e2c9a0"/>
+  <ellipse cx="48" cy="58" rx="7" ry="9" fill="#222"/>
+  <ellipse cx="72" cy="58" rx="7" ry="9" fill="#222"/>
+  <ellipse cx="60" cy="85" rx="14" ry="6" fill="#fff"/>
+  <ellipse cx="60" cy="87" rx="8" ry="3" fill="#222"/>
+  <rect x="40" y="110" width="40" height="18" rx="8" fill="#222" opacity="0.12"/>
+  <rect x="30" y="128" width="60" height="6" rx="3" fill="#b3b3b3"/>
+  <text x="60" y="125" text-anchor="middle" font-size="12" fill="#888">Virtuelni knjigovođa</text>
+</svg>
