@@ -10,10 +10,12 @@ function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false); // 🔒 DODATO
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
+    setLoading(true); // 🔒 BLOKADA POČINJE
 
     try {
       const data = await apiFetch("/api/login", {
@@ -21,7 +23,11 @@ function LoginScreen() {
         body: JSON.stringify({ email, password }),
       });
 
-      if (data.error || data.message === "Korisnik ne postoji" || data.message === "Pogrešna lozinka") {
+      if (
+        data.error ||
+        data.message === "Korisnik ne postoji" ||
+        data.message === "Pogrešna lozinka"
+      ) {
         setError(data.message || "Greška pri prijavi");
         return;
       }
@@ -32,11 +38,17 @@ function LoginScreen() {
     } catch (err) {
       console.error(err);
       setError("Greška na serveru");
+    } finally {
+      setLoading(false); // 🔒 BLOKADA SE GASI
     }
   };
 
   return (
     <div className="login-container">
+
+      {/* 🔒 GLOBALNI OVERLAY KOJI BLOKIRA SVE */}
+      {loading && <div className="overlay"></div>}
+
       <h2 className="login-title">Prijava</h2>
 
       <form onSubmit={handleLogin}>
@@ -46,6 +58,7 @@ function LoginScreen() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
+          disabled={loading} // 🔒 BLOKADA INPUTA
         />
 
         <input
@@ -54,6 +67,7 @@ function LoginScreen() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
+          disabled={loading} // 🔒 BLOKADA INPUTA
         />
 
         {error && (
@@ -62,7 +76,9 @@ function LoginScreen() {
           </div>
         )}
 
-        <button type="submit">Prijavi se</button>
+        <button type="submit" disabled={loading}>
+          {loading ? "Učitavanje..." : "Prijavi se"}
+        </button>
       </form>
     </div>
   );

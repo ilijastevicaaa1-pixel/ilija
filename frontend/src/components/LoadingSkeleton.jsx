@@ -2,7 +2,7 @@ import React from 'react';
 
 function LoadingSkeleton({ rows = 8, columns = 5, height = 24 }) {
   return (
-    <div style={{ width: '100%', margin: '32px 0' }}>
+    <div data-testid="loading-skeleton" style={{ width: '100%', margin: '32px 0' }}>
       {[...Array(rows)].map((_, r) => (
         <div key={r} style={{ display: 'flex', gap: 8, marginBottom: 4 }}>
           {[...Array(columns)].map((_, c) => (

@@ -1,12 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-
-import { useAuth } from './auth/AuthContext.jsx';
-import ProtectedRoute from './auth/ProtectedRoute.jsx';
-
-import LoadingSkeleton from "../components/LoadingSkeleton";
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import ChatWindow from "./ChatWindow";
-import BotChatScreen from './BotChatScreen.jsx';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { AuthProvider, useAuth } from './auth/AuthContext.jsx';
+import ProtectedRoute from './auth/ProtectedRoute.jsx';
 
 import LoginScreen from './screens/LoginScreen.jsx';
 import DashboardScreen from './screens/DashboardScreen.jsx';
@@ -32,21 +29,24 @@ import KarticaScreen from './screens/skladiste/KarticaScreen.jsx';
 import AiBatchScreen from './screens/AiBatchScreen.jsx';
 import AiFakturaScreen from './screens/AiFakturaScreen.jsx';
 
+import BotChatScreen from './BotChatScreen.jsx';
+
 
 // ---------------------------------------------------------
-// WRAPPER ZA PRIJAVLJENE KORISNIKE
+// WRAPPER KOJI PRIKAZUJE CHAT NA SVIM STRANICAMA OSIM LOGIN
 // ---------------------------------------------------------
-
 function AppWithChat() {
+  const { user } = useAuth();
+  const location = useLocation();
+
   return (
     <>
       <div className="app-background" />
       <div className="app-overlay" />
       <div className="app-content">
-
-        <BotChatScreen />
-
         <Routes>
+          <Route path="/login" element={<LoginScreen />} />
+          <Route path="/register" element={<Navigate to="/login" replace />} />
           <Route path="/dashboard" element={<ProtectedRoute><DashboardScreen /></ProtectedRoute>} />
           <Route path="/input-invoices" element={<ProtectedRoute><InputInvoiceScreen /></ProtectedRoute>} />
           <Route path="/output-invoices" element={<ProtectedRoute><OutputInvoiceScreen /></ProtectedRoute>} />
@@ -60,19 +60,20 @@ function AppWithChat() {
           <Route path="/travel-orders" element={<ProtectedRoute><TravelOrdersScreen /></ProtectedRoute>} />
           <Route path="/salaries" element={<ProtectedRoute><SalariesScreen /></ProtectedRoute>} />
           <Route path="/internal-records" element={<ProtectedRoute><InternalRecordsScreen /></ProtectedRoute>} />
-
           <Route path="/artikli" element={<ProtectedRoute><ArtikliScreen /></ProtectedRoute>} />
           <Route path="/stanje" element={<ProtectedRoute><StanjeScreen /></ProtectedRoute>} />
           <Route path="/prijemke" element={<ProtectedRoute><PrijemkeScreen /></ProtectedRoute>} />
           <Route path="/vydajke" element={<ProtectedRoute><VydajkeScreen /></ProtectedRoute>} />
-          <Route path="/kartica/:itemId" element={<ProtectedRoute><KarticaScreen /></ProtectedRoute>} />
-
+          <Route path="/kartica" element={<ProtectedRoute><KarticaScreen /></ProtectedRoute>} />
+          <Route path="/skladiste/artikli" element={<ProtectedRoute><ArtikliScreen /></ProtectedRoute>} />
+          <Route path="/skladiste/stanje" element={<ProtectedRoute><StanjeScreen /></ProtectedRoute>} />
+          <Route path="/skladiste/prijemke" element={<ProtectedRoute><PrijemkeScreen /></ProtectedRoute>} />
+          <Route path="/skladiste/vydajke" element={<ProtectedRoute><VydajkeScreen /></ProtectedRoute>} />
+          <Route path="/skladiste/kartica/:itemId" element={<ProtectedRoute><KarticaScreen /></ProtectedRoute>} />
           <Route path="/ai-faktura" element={<ProtectedRoute><AiFakturaScreen /></ProtectedRoute>} />
           <Route path="/ai-batch" element={<ProtectedRoute><AiBatchScreen /></ProtectedRoute>} />
-
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
-
       </div>
     </>
   );
@@ -80,70 +81,60 @@ function AppWithChat() {
 
 
 // ---------------------------------------------------------
-// GLAVNI APP
+// GLAVNI APP WRAPPER
 // ---------------------------------------------------------
-
 function App() {
-  const [initialized, setInitialized] = useState(false);
   const [openChat, setOpenChat] = useState(false);
-  const { user, loading } = useAuth();
 
-  // GLOBALNI LOADING
-  useEffect(() => {
-    setTimeout(() => setInitialized(true), 1200);
-  }, []);
-
-  if (!initialized || loading) {
-    return (
-      <div style={{
-        position: 'fixed',
-        top: 0, left: 0,
-        width: '100vw',
-        height: '100vh',
-        background: '#fff',
-        zIndex: 9999,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center'
-      }}>
-        <LoadingSkeleton />
+  // Custom wrapper to use useNavigate inside App
+  function AppWithRozpocetBtn() {
+    const navigate = useNavigate();
+    return <>
+      {/* Floating chat dugme */}
+      <div
+        onClick={() => setOpenChat(true)}
+        className="chat-launcher"
+      >
+        💬
       </div>
-    );
+
+      {/* Novo dugme u gornjem desnom uglu */}
+      <button
+        className="rozpocet-btn"
+        style={{position: 'fixed', top: 24, right: 32, zIndex: 10001}}
+        onClick={() => navigate('/rozpocet')}
+      >
+        Rozpočet
+      </button>
+
+      {/* Chat prozor */}
+      {openChat && (
+        <ChatWindow onClose={() => setOpenChat(false)} />
+      )}
+      <AppWithChat />
+    </>;
   }
 
   return (
-    <BrowserRouter>
-
-      {/* Chat dugme samo za prijavljene */}
-      {user && user.token && (
-        <>
-          <div
-            onClick={() => setOpenChat(true)}
-            className="chat-launcher"
-          >
-            💬
-          </div>
-
-          {openChat && (
-            <ChatWindow onClose={() => setOpenChat(false)} />
-          )}
-        </>
-      )}
-
-      {/* Ako nije prijavljen → login */}
-      {!user || !user.token ? (
+    <AuthProvider>
+      <BrowserRouter>
         <Routes>
-          <Route path="/" element={<LoginScreen />} />
-          <Route path="/login" element={<LoginScreen />} />
-          <Route path="*" element={<Navigate to="/login" replace />} />
+          <Route path="/*" element={<AppWithRozpocetBtn />} />
+          {/* Dinamički import Rozpocet stranice */}
+          <Route path="/rozpocet" element={
+            <React.Suspense fallback={<div>Učitavanje...</div>}>
+              <Rozpocet />
+            </React.Suspense>
+          } />
         </Routes>
-      ) : (
-        <AppWithChat />
-      )}
-
-    </BrowserRouter>
+      </BrowserRouter>
+    </AuthProvider>
   );
 }
+
+
+// Dinamički import Rozpocet stranice
+const Rozpocet = React.lazy(() => import('./Rozpocet.jsx'));
 
 export default App;
 

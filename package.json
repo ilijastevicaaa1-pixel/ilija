@@ -1,0 +1,8 @@
+{
+  "name": "aap-root",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Root package.json (restored)",
+  "main": "index.js",
+  "license": "MIT"
+}
