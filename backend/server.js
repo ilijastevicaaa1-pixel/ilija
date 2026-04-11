@@ -1,3 +1,7 @@
+// Test ruta za proveru rada backend-a
+app.get('/api/test', (req, res) => {
+  res.json({ message: 'Test ruta radi!' });
+});
 // --- AUDIT LOG MIDDLEWARE ---
 async function auditLogMiddleware(req, res, next) {
   const db = await getDb();
