@@ -3,7 +3,7 @@ import express, { Router } from 'express';
 const router = Router();
 import multer from 'multer';
 import path from 'path';
-import { parsePdfInvoice } from '../../src/utils/pdfInvoiceParser.js';
+import { parsePdfInvoice } from '../utils/pdfInvoiceParser.js';
 import { extractTextWithGoogleVision } from '../googleVisionOCR.js';
 import { extractTextFromImage } from '../ocr.js';
 import { extractInvoiceFields } from '../extractFields.js';
