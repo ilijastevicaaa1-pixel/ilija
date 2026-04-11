@@ -1,10 +1,10 @@
 import fs from 'fs';
-import { PDFParse } from 'pdf-parse';
+import pdf from 'pdf-parse';
 
 // Osnovni parser za PDF ulazne fakture
 export async function parsePdfInvoice(pdfPath) {
   const buffer = fs.readFileSync(pdfPath);
-  const data = await new PDFParse(buffer).parse();
+  const data = await pdf(buffer);
   const text = data.text;
 
   // Naivno parsiranje osnovnih polja (prilagoditi prema PDF formatu)
