@@ -3,7 +3,7 @@ import express, { Router } from 'express';
 const router = Router();
 import multer from 'multer';
 import path from 'path';
-import { parseBankCsv, parseBankExcel } from '../../src/utils/bankCsvParser.js';
+import { parseBankCsv, parseBankExcel } from '../utils/bankCsvParser.js';
 
 const upload = multer({ dest: 'uploads/' });
 
