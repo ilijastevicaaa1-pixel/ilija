@@ -12,6 +12,7 @@
     "react-build": "react-scripts build",
     "react-test": "react-scripts test",
     "eject": "react-scripts eject"
+  },
   "dependencies": {
     "chart.js": "^4.5.1",
     "react": "^19.2.4",
@@ -25,4 +26,3 @@
     "vite": "^8.0.0-beta.18"
   }
 }
-
