@@ -1,9 +1,11 @@
 // ...existing code...
+// --- AUDIT LOG MIDDLEWARE ---
+// --- AUDIT LOG MIDDLEWARE ---
+const app = express();
 // Root ruta za proveru rada servera
 app.get("/", (req, res) => {
   res.send("Backend radi");
 });
-// --- AUDIT LOG MIDDLEWARE ---
 async function auditLogMiddleware(req, res, next) {
   const db = await getDb();
   const userId = req.user?.id || null; // zahteva authMiddleware za user info
