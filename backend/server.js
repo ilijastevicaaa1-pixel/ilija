@@ -89,7 +89,8 @@ function confidenceInterval(arr) {
   return { min: avg - std, max: avg + std };
 }
 
-const app = express();
+  try {
+    const db = await getDb();
 // Root ruta za proveru rada servera
 app.get("/", (req, res) => {
   res.send("Backend radi");
@@ -125,10 +126,11 @@ app.get('/api/predikcije', async (req, res) => {
   // Dummy logika za primer
   const months = [];
   const income = amounts;
-  const expense = amounts.map(a => a * 0.7); // dummy
-  const profit = income.map((v, i) => v - expense[i]);
-  const predIncome = predictNext(income);
-  const predExpense = predictNext(expense);
+  } catch (e) {
+    console.error('Audit log error:', e);
+  } finally {
+    next();
+  }
   const predProfit = predictNext(profit);
   const ciIncome = confidenceInterval(income);
   const ciExpense = confidenceInterval(expense);
@@ -702,57 +704,72 @@ app.get('/api/logs', async (req, res) => {
 });
 // POST /api/users — dodavanje korisnika
 app.post('/api/users', auditLogMiddleware, async (req, res) => {
-  const db = await getDb();
-  const { username, email, password } = req.body;
-  if (!username || !email || !password) {
-    return res.status(400).json({ error: 'Nedostaju obavezna polja.' });
+  try {
+    const db = await getDb();
+    const { username, email, password } = req.body;
+    if (!username || !email || !password) {
+      return res.status(400).json({ error: 'Nedostaju obavezna polja.' });
+    }
+    const { rows: userRows } = await db.query('SELECT * FROM users WHERE email = $1 OR username = $2', [email, username]);
+    if (userRows.length > 0) {
+      return res.status(409).json({ error: 'Korisnik sa tim emailom ili username već postoji.' });
+    }
+    const hash = await bcrypt.hash(password, 10);
+    await db.query('INSERT INTO users (username, email, password_hash) VALUES ($1, $2, $3)', [username, email, hash]);
+    res.status(201).json({ message: 'Korisnik dodat.' });
+  } catch (err) {
+    console.error("Greška u POST /api/users:", err);
+    res.status(500).json({ error: "Greška na serveru." });
   }
-  // Provera duplikata
-  const { rows: userRows } = await db.query('SELECT * FROM users WHERE email = $1 OR username = $2', [email, username]);
-  if (userRows.length > 0) {
-    return res.status(409).json({ error: 'Korisnik sa tim emailom ili username već postoji.' });
-  }
-  const hash = await bcrypt.hash(password, 10);
-  await db.query('INSERT INTO users (username, email, password_hash) VALUES ($1, $2, $3)', [username, email, hash]);
-  res.status(201).json({ message: 'Korisnik dodat.' });
 });
 
 // GET /api/users — lista svih korisnika
 app.get('/api/users', async (req, res) => {
-  const db = await getDb();
-  const { rows } = await db.query('SELECT id, username, email FROM users');
-  res.json(rows);
+  try {
+    const db = await getDb();
+    const { rows } = await db.query('SELECT id, username, email FROM users');
+    res.json(rows);
+  } catch (err) {
+    console.error("Greška u GET /api/users:", err);
+    res.status(500).json({ error: "Greška na serveru." });
+  }
 });
 
 // PUT /api/users/:id — izmena korisnika
 app.put('/api/users/:id', auditLogMiddleware, async (req, res) => {
-  const db = await getDb();
-  const { username, email, password } = req.body;
-  if (!username || !email) {
-    return res.status(400).json({ error: 'Nedostaju obavezna polja.' });
+  try {
+    const db = await getDb();
+    const { username, email, password } = req.body;
+    if (!username || !email) {
+      return res.status(400).json({ error: 'Nedostaju obavezna polja.' });
+    }
+    const { rows: userRows } = await db.query('SELECT * FROM users WHERE (email = $1 OR username = $2) AND id != $3', [email, username, req.params.id]);
+    if (userRows.length > 0) {
+      return res.status(409).json({ error: 'Email ili username već postoji.' });
+    }
+    let hash = password ? await bcrypt.hash(password, 10) : null;
+    if (hash) {
+      await db.query('UPDATE users SET username=$1, email=$2, password_hash=$3 WHERE id=$4', [username, email, hash, req.params.id]);
+    } else {
+      await db.query('UPDATE users SET username=$1, email=$2 WHERE id=$3', [username, email, req.params.id]);
+    }
+    res.json({ message: 'Korisnik izmenjen.' });
+  } catch (err) {
+    console.error("Greška u PUT /api/users:", err);
+    res.status(500).json({ error: "Greška na serveru." });
   }
-  // Provera duplikata (osim trenutnog korisnika)
-  const { rows: userRows } = await db.query('SELECT * FROM users WHERE (email = $1 OR username = $2) AND id != $3', [email, username, req.params.id]);
-  if (userRows.length > 0) {
-    return res.status(409).json({ error: 'Email ili username već postoji.' });
-  }
-  let hash = undefined;
-  if (password) {
-    hash = await bcrypt.hash(password, 10);
-  }
-  if (hash) {
-    await db.query('UPDATE users SET username=$1, email=$2, password_hash=$3 WHERE id=$4', [username, email, hash, req.params.id]);
-  } else {
-    await db.query('UPDATE users SET username=$1, email=$2 WHERE id=$3', [username, email, req.params.id]);
-  }
-  res.json({ message: 'Korisnik izmenjen.' });
 });
 
 // DELETE /api/users/:id — brisanje korisnika
 app.delete('/api/users/:id', auditLogMiddleware, async (req, res) => {
-  const db = await getDb();
-  await db.query('DELETE FROM users WHERE id=$1', [req.params.id]);
-  res.json({ message: 'Korisnik obrisan.' });
+  try {
+    const db = await getDb();
+    await db.query('DELETE FROM users WHERE id=$1', [req.params.id]);
+    res.json({ message: 'Korisnik obrisan.' });
+  } catch (err) {
+    console.error("Greška u DELETE /api/users:", err);
+    res.status(500).json({ error: "Greška na serveru." });
+  }
 });
 
 // Eksport faktura
