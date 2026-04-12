@@ -72,6 +72,9 @@ import faktureBatchRouter from './routes/faktureBatch.js';
 import aiRouter from './routes/ai.js';
 import matchingRouter from './routes/matching.js';
 
+// Inicijalizacija Express aplikacije
+const app = express();
+
 // --- APP INIT ---
 // --- HELPER FUNKCIJE ZA PREDIKCIJE I INTERVAL --- 
 function predictNext(arr) {
