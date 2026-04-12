@@ -88,9 +88,7 @@ function confidenceInterval(arr) {
   const std = Math.sqrt(arr.reduce((a, b) => a + Math.pow(b - avg, 2), 0) / arr.length);
   return { min: avg - std, max: avg + std };
 }
-
-  try {
-    const db = await getDb();
+// ...existing code...
 // Root ruta za proveru rada servera
 app.get("/", (req, res) => {
   res.send("Backend radi");
@@ -118,6 +116,7 @@ app.use('/api', loginRouter);
 app.use('/api/auth', authRouter);
 
 // --- API PREDIKCIJE ---
+
 app.get('/api/predikcije', async (req, res) => {
   const db = await getDb();
   // Prikupi podatke iz baze
@@ -126,11 +125,10 @@ app.get('/api/predikcije', async (req, res) => {
   // Dummy logika za primer
   const months = [];
   const income = amounts;
-  } catch (e) {
-    console.error('Audit log error:', e);
-  } finally {
-    next();
-  }
+  const expense = amounts.map(a => a * 0.7); // dummy
+  const profit = income.map((v, i) => v - expense[i]);
+  const predIncome = predictNext(income);
+  const predExpense = predictNext(expense);
   const predProfit = predictNext(profit);
   const ciIncome = confidenceInterval(income);
   const ciExpense = confidenceInterval(expense);
