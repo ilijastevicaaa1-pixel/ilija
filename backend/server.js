@@ -1,7 +1,3 @@
-// Test ruta za proveru rada backend-a
-app.get('/api/test', (req, res) => {
-  res.json({ message: 'Test ruta radi!' });
-});
 // --- AUDIT LOG MIDDLEWARE ---
 async function auditLogMiddleware(req, res, next) {
   const db = await getDb();
@@ -1599,9 +1595,14 @@ if (process.env.NODE_ENV === 'production') {
   })();
 }
 
+export default app;
 
-const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+// Pokretanje servera
+if (process.env.NODE_ENV !== 'test') {
+  const PORT = process.env.PORT || 10000;
+  app.listen(PORT, () => {
+    console.log(`Server pokrenut na portu ${PORT}`);
+  });
+}
+
 
