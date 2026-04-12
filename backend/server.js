@@ -1,3 +1,7 @@
+// Root ruta za proveru rada servera
+app.get("/", (req, res) => {
+  res.send("Backend radi");
+});
 // --- AUDIT LOG MIDDLEWARE ---
 async function auditLogMiddleware(req, res, next) {
   const db = await getDb();
