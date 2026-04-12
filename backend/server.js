@@ -1,11 +1,6 @@
 // ...existing code...
 // --- AUDIT LOG MIDDLEWARE ---
 // --- AUDIT LOG MIDDLEWARE ---
-const app = express();
-// Root ruta za proveru rada servera
-app.get("/", (req, res) => {
-  res.send("Backend radi");
-});
 async function auditLogMiddleware(req, res, next) {
   const db = await getDb();
   const userId = req.user?.id || null; // zahteva authMiddleware za user info
@@ -17,9 +12,7 @@ async function auditLogMiddleware(req, res, next) {
     else if (req.path.startsWith('/api/izlazne-fakture')) entity = 'output_invoices';
     else if (req.path.startsWith('/api/banka')) entity = 'bank_transactions';
     else return next(); // ne loguj ostale
-
-    // Samo za POST/PUT/DELETE
-    if (!['POST', 'PUT', 'DELETE'].includes(req.method)) return next();
+// --- AUDIT LOG MIDDLEWARE ---
 
     // ID entiteta
     entityId = req.params.id || null;
@@ -95,7 +88,12 @@ function confidenceInterval(arr) {
   const std = Math.sqrt(arr.reduce((a, b) => a + Math.pow(b - avg, 2), 0) / arr.length);
   return { min: avg - std, max: avg + std };
 }
+
 const app = express();
+// Root ruta za proveru rada servera
+app.get("/", (req, res) => {
+  res.send("Backend radi");
+});
 app.use(cors());
 
 // ❗ VAŽNO: JSON parser NE SME da se primeni na multipart/form-data
