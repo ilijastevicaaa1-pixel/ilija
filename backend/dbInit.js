@@ -1,10 +1,12 @@
-const pool = require('./db'); // prilagodi putanju ako treba
-const bcrypt = require('bcrypt');
+
+import { getDb } from './db.js';
+import bcrypt from 'bcrypt';
 
 async function initializeDatabase() {
   try {
     // 1. Kreiranje tabele ako ne postoji
-    await pool.query(`
+    const db = await getDb();
+    await db.query(`
       CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
         username VARCHAR(255) NOT NULL,
@@ -17,14 +19,14 @@ async function initializeDatabase() {
     console.log("Tabela 'users' proverena / kreirana.");
 
     // 2. Provera da li admin postoji
-    const adminCheck = await pool.query(
+    const adminCheck = await db.query(
       "SELECT * FROM users WHERE email = 'admin@firma.com';"
     );
 
     if (adminCheck.rows.length === 0) {
       const hash = await bcrypt.hash("admin123", 10); // default lozinka
 
-      await pool.query(
+      await db.query(
         `INSERT INTO users (username, email, password_hash, role)
          VALUES ($1, $2, $3, $4);`,
         ['admin', 'admin@firma.com', hash, 'admin']
