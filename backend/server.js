@@ -1603,24 +1603,6 @@ app.post('/api/pdv', (req, res) => {
 // Banka
 
 
-// --- FRONTEND SERVING (PRODUCTION ONLY) ---
-if (process.env.NODE_ENV === 'production') {
-  (async () => {
-    const path = await import('path');
-    const { fileURLToPath } = await import('url');
-
-    const __filename = fileURLToPath(import.meta.url);
-    const __dirname = path.dirname(__filename);
-
-    const frontendPath = path.join(__dirname, '../frontend/dist');
-
-    app.use(express.static(frontendPath));
-
-    app.get('*', (req, res) => {
-      res.sendFile(path.join(frontendPath, 'index.html'));
-    });
-  })();
-}
 
 export default app;
 
