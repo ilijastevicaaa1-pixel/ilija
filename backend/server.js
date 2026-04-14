@@ -73,7 +73,7 @@ import aiRouter from './routes/ai.js';
 import matchingRouter from './routes/matching.js';
 
 // Inicijalizacija baze i admin korisnika
-const initializeDatabase = require('./dbInit');
+import initializeDatabase from './dbInit.js';
 initializeDatabase();
 
 // Inicijalizacija Express aplikacije
