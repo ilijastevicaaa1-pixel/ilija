@@ -13,10 +13,10 @@ export default function Login() {
     setError("");
 
     try {
-      const res = await axios.post("http://localhost:3001/api/login", {
-        email,
-        password
-      });
+      const res = await axios.post("https://knjigovodstvo-backend.onrender.com/api/login", {
+  email,
+  password
+});
 
       localStorage.setItem("jwt", res.data.token);
       window.location.href = "/dashboard";

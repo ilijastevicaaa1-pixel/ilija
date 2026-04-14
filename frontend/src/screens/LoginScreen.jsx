@@ -10,12 +10,12 @@ function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false); // 🔒 DODATO
+  const [loading, setLoading] = useState(false);
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
-    setLoading(true); // 🔒 BLOKADA POČINJE
+    setLoading(true);
 
     try {
       const data = await apiFetch("/api/login", {
@@ -23,15 +23,19 @@ function LoginScreen() {
         body: JSON.stringify({ email, password }),
       });
 
-      if (
-        data.error ||
-        data.message === "Korisnik ne postoji" ||
-        data.message === "Pogrešna lozinka"
-      ) {
+      // Ako backend vrati error
+      if (data.error) {
+        setError(data.error);
+        return;
+      }
+
+      // Ako nema tokena, prijava nije uspela
+      if (!data.token) {
         setError(data.message || "Greška pri prijavi");
         return;
       }
 
+      // Uspešna prijava
       login(data.token);
       navigate("/bot-chat");
 
@@ -39,14 +43,12 @@ function LoginScreen() {
       console.error(err);
       setError("Greška na serveru");
     } finally {
-      setLoading(false); // 🔒 BLOKADA SE GASI
+      setLoading(false);
     }
   };
 
   return (
     <div className="login-container">
-
-      {/* 🔒 GLOBALNI OVERLAY KOJI BLOKIRA SVE */}
       {loading && <div className="overlay"></div>}
 
       <h2 className="login-title">Prijava</h2>
@@ -58,7 +60,7 @@ function LoginScreen() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
-          disabled={loading} // 🔒 BLOKADA INPUTA
+          disabled={loading}
         />
 
         <input
@@ -67,7 +69,7 @@ function LoginScreen() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
-          disabled={loading} // 🔒 BLOKADA INPUTA
+          disabled={loading}
         />
 
         {error && (
@@ -85,3 +87,4 @@ function LoginScreen() {
 }
 
 export default LoginScreen;
+
