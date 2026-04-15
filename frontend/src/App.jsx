@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import ChatWindow from "./ChatWindow";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './auth/AuthContext.jsx';
-import ProtectedRoute from './auth/ProtectedRoute.jsx';
+import ProtectedRoute from './ProtectedRoute.jsx';
 
 import LoginScreen from './screens/LoginScreen.jsx';
 import DashboardScreen from './screens/DashboardScreen.jsx';

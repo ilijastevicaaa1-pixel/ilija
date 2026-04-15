@@ -1,11 +1,13 @@
+
 import { useState } from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
-export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const navigate = useNavigate();
 
   async function handleLogin(e) {
     e.preventDefault();
@@ -14,17 +16,22 @@ export default function Login() {
 
     try {
       const res = await axios.post("https://knjigovodstvo-backend.onrender.com/api/login", {
-  email,
-  password
-});
-
-      localStorage.setItem("jwt", res.data.token);
-      window.location.href = "/dashboard";
+        email,
+        password
+      });
+      // Čuvanje tokena
+      localStorage.setItem("token", res.data.token);
+      navigate("/dashboard");
     } catch (err) {
       setError("Pogrešan email ili lozinka");
+    } finally {
+      setLoading(false);
     }
+  }
 
-    setLoading(false);
+  function handleLogout() {
+    localStorage.removeItem("token");
+    navigate("/login");
   }
 
   return (
@@ -63,7 +70,10 @@ export default function Login() {
         Prijava
       </button>
 
+      {loading && <p>Učitavanje...</p>}
       {error && <div style={{ color: "red", marginTop: 12 }}>{error}</div>}
+      {/* Primer logout dugmeta */}
+      {/* <button type="button" onClick={handleLogout}>Logout</button> */}
     </form>
   );
 }
