@@ -72,7 +72,7 @@ function AppWithChat() {
           <Route path="/skladiste/kartica/:itemId" element={<ProtectedRoute><KarticaScreen /></ProtectedRoute>} />
           <Route path="/ai-faktura" element={<ProtectedRoute><AiFakturaScreen /></ProtectedRoute>} />
           <Route path="/ai-batch" element={<ProtectedRoute><AiBatchScreen /></ProtectedRoute>} />
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </div>
     </>
