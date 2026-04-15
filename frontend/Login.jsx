@@ -70,7 +70,7 @@ import { useNavigate } from "react-router-dom";
         Prijava
       </button>
 
-      {/* {loading && <p>Učitavanje...</p>} */}
+      {loading && <p>Učitavanje...</p>}
       {error && <div style={{ color: "red", marginTop: 12 }}>{error}</div>}
       {/* Primer logout dugmeta */}
       {/* <button type="button" onClick={handleLogout}>Logout</button> */}
