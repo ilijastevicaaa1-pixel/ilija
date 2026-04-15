@@ -83,10 +83,20 @@ function AppWithChat() {
 // ---------------------------------------------------------
 // GLAVNI APP WRAPPER
 // ---------------------------------------------------------
+
 function App() {
+  const { loading } = useAuth();
   const [openChat, setOpenChat] = useState(false);
 
-  // Custom wrapper to use useNavigate inside App
+  // Prikaz loading ekrana dok traje loading
+  if (loading) {
+    return (
+      <div style={{ background: '#fff', width: '100vw', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24 }}>
+        Učitavanje...
+      </div>
+    );
+  }
+
   function AppWithRozpocetBtn() {
     const navigate = useNavigate();
     return <>
@@ -116,19 +126,17 @@ function App() {
   }
 
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/*" element={<AppWithRozpocetBtn />} />
-          {/* Dinamički import Rozpocet stranice */}
-          <Route path="/rozpocet" element={
-            <React.Suspense fallback={<div>Učitavanje...</div>}>
-              <Rozpocet />
-            </React.Suspense>
-          } />
-        </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/*" element={<AppWithRozpocetBtn />} />
+        {/* Dinamički import Rozpocet stranice */}
+        <Route path="/rozpocet" element={
+          <React.Suspense fallback={<div>Učitavanje...</div>}>
+            <Rozpocet />
+          </React.Suspense>
+        } />
+      </Routes>
+    </BrowserRouter>
   );
 }
 
