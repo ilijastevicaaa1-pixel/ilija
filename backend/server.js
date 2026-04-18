@@ -87,14 +87,15 @@ app.get('/users', async (req, res) => {
     }
 });
 
-// Import SQL route (CommonJS compatible)
+// Import SQL route - Render DATABASE_URL
 app.get('/import', async (req, res) => {
     try {
-        const importSQL = (await import('./import-sql.cjs')).default;
+        const { default: importSQL } = await import('./import-sql.cjs');
         const result = await importSQL();
-        res.send(result);
+        res.json({ success: true, message: result });
     } catch (err) {
-        res.status(500).send(err.toString());
+        console.error('Import error:', err);
+        res.status(500).json({ error: err.message });
     }
 });
 app.use(cors());
