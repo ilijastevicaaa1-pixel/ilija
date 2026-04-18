@@ -18,7 +18,7 @@ app.get('/users', async (req, res) => {
 // Import SQL route
 app.get('/import', async (req, res) => {
   try {
-    const { default: importSQL } = await import('./import-sql.js');
+    const { default: importSQL } = await import('./import-sql.cjs');
     const result = await importSQL();
     res.send(result);
   } catch (err) {
