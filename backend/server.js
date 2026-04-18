@@ -9,7 +9,7 @@ import bcrypt from 'bcrypt';
 import util from 'util';
 import { getDb } from './db.js';
 import loginRouter from './routes/login.js';
-import importSQL from './import-sql.js';
+// importSQL removed from server.js to fix ESM error
 import authRouter from './routes/auth.js';
 import { auth } from './authMiddleware.js';
 import { extractTextWithGoogleVision } from './googleVisionOCR.js';
@@ -82,13 +82,22 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use('/audio', express.static('audio'));
 
 // --- SQL IMPORT ROUTE (added) ---
-app.get('/import', async (req, res) => {
-    try {
-        const result = await importSQL();
-        res.send(result);
-    } catch (err) {
-        res.status(500).send(err.toString());
-    }
+app.get('/', async (req, res) => {
+    res.send(`
+    <h1>Backend radi!</h1>
+    <p><a href="/api/login">Login API ✓</a></p>
+    <p><a href="/api/dashboard">Dashboard API ✓</a></p>
+    <p><a href="/api/users">Users ✓</a></p>
+    <p>Frontend proxy: https://knjigovodstvo-backend.onrender.com ✓</p>
+  `);
+});
+
+try {
+    const result = await importSQL();
+    res.send(result);
+} catch (err) {
+    res.status(500).send(err.toString());
+}
 });
 
 // Use routers
