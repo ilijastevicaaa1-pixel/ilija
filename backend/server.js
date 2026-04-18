@@ -71,7 +71,32 @@ async function auditLogMiddleware(req, res, next) {
 }
 
 // Root ruta
-app.get("/", (req, res) => res.send("Backend radi - SQL import spreman"));
+app.get("/", (req, res) => res.send("Backend radi"));
+
+// Health check for Render
+app.get('/health', (req, res) => res.send('OK'));
+
+// Test users route
+app.get('/users', async (req, res) => {
+    try {
+        const db = await getDb();
+        const result = await db.query('SELECT * FROM users LIMIT 5');
+        res.json(result.rows);
+    } catch (err) {
+        res.status(500).send(err.toString());
+    }
+});
+
+// Import SQL route (CommonJS compatible)
+app.get('/import', async (req, res) => {
+    try {
+        const importSQL = (await import('./import-sql.js')).default;
+        const result = await importSQL();
+        res.send(result);
+    } catch (err) {
+        res.status(500).send(err.toString());
+    }
+});
 app.use(cors());
 
 app.use((req, res, next) => {
