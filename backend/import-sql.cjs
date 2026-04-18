@@ -4,10 +4,7 @@ const { Client } = require('pg');
 async function importSQL() {
     const sql = fs.readFileSync('knjigovodstvo.sql').toString();
 
-    const client = new Client({
-        connectionString: process.env.DATABASE_URL,
-        ssl: { rejectUnauthorized: false }
-    });
+    const client = require('./db-config.js');
 
     await client.connect();
     await client.query(sql);
