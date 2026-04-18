@@ -1,10 +1,19 @@
-console.log("TEST_VAR iz .env:", process.env.TEST_VAR);
-import app from './server.js';
 
-// Health check for Render
+console.log("TEST_VAR iz .env:", process.env.TEST_VAR);
+
+import app from './server.js';
+import fs from 'fs';
+import path from 'path';
+import { getDb } from './db.js';
+
+// ----------------------
+// HEALTH CHECK
+// ----------------------
 app.get('/health', (req, res) => res.send('OK'));
 
-// Test users route
+// ----------------------
+// TEST USERS ROUTA
+// ----------------------
 app.get('/users', async (req, res) => {
   try {
     const db = await import('./db.js').then(m => m.getDb());
@@ -15,9 +24,27 @@ app.get('/users', async (req, res) => {
   }
 });
 
-// Import SQL route
-// /import moved to server.js - index.js no longer needed
+// ----------------------
+// SQL IMPORT ROUTA
+// ----------------------
+app.get("/import-sql", async (req, res) => {
+  try {
+    const sqlPath = path.join(process.cwd(), "dump.sql");
+    const sql = fs.readFileSync(sqlPath, "utf8");
 
+    const db = await getDb();
+    await db.query(sql);
+
+    res.json({ message: "SQL import uspešan!" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ----------------------
+// START SERVER
+// ----------------------
 let PORT = process.env.PORT ? Number(process.env.PORT) : 3001;
 let maxTries = 10;
 let tries = 0;
@@ -27,6 +54,7 @@ function startServer() {
   server = app.listen(PORT, () => {
     console.log(`Backend running on http://localhost:${PORT}`);
   });
+
   server.on("error", (err) => {
     if (err.code === "EADDRINUSE") {
       if (tries < maxTries) {
@@ -47,6 +75,9 @@ function startServer() {
 
 startServer();
 
+// ----------------------
+// TTS ROUTA
+// ----------------------
 import { generateSpeech } from "./tts.js";
 
 app.post("/tts", async (req, res) => {
@@ -63,4 +94,3 @@ app.post("/tts", async (req, res) => {
     res.status(500).json({ error: "TTS failed" });
   }
 });
-
