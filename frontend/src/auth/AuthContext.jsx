@@ -37,7 +37,9 @@ export function AuthProvider({ children }) {
     setUser(null);
   };
 
-  if (loading) return null; // Prazna strana dok traje loading
+  if (loading) {
+    return <LoadingScreen />;
+  }
 
   return (
     <AuthContext.Provider value={{ user, loading, login, logout }}>

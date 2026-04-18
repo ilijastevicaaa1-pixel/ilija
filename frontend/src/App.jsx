@@ -84,15 +84,8 @@ function AppWithChat() {
 // GLAVNI APP WRAPPER
 // ---------------------------------------------------------
 
-import LoadingScreen from './components/LoadingScreen.jsx';
-
 function App() {
-  const { loading } = useAuth();
   const [openChat, setOpenChat] = useState(false);
-
-  if (loading) {
-    return <LoadingScreen />;
-  }
 
   function AppWithRozpocetBtn() {
     const navigate = useNavigate();
