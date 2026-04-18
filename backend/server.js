@@ -87,14 +87,20 @@ app.get('/users', async (req, res) => {
     }
 });
 
-// Import SQL route - Render DATABASE_URL
-app.get('/import', async (req, res) => {
+import path from 'path';
+import fs from 'fs';
+import { pool } from './db.js';
+
+app.post("/import-sql", async (req, res) => {
     try {
-        const { default: importSQL } = await import('./import-sql.cjs');
-        const result = await importSQL();
-        res.json({ success: true, message: result });
+        const sqlPath = path.join(process.cwd(), "dump.sql");
+        const sql = fs.readFileSync(sqlPath, "utf8");
+
+        await pool.query(sql);
+
+        res.json({ message: "SQL import uspešan!" });
     } catch (err) {
-        console.error('Import error:', err);
+        console.error(err);
         res.status(500).json({ error: err.message });
     }
 });
