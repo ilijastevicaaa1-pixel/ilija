@@ -92,14 +92,6 @@ app.get('/', async (req, res) => {
   `);
 });
 
-try {
-    const result = await importSQL();
-    res.send(result);
-} catch (err) {
-    res.status(500).send(err.toString());
-}
-});
-
 // Use routers
 app.use('/api/upload/pdf', pdfUploadRouter);
 app.use('/api/upload/bank', bankUploadRouter);
