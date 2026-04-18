@@ -45,7 +45,7 @@ app.get('/users', async (req, res) => {
     }
 });
 
-app.post("/import-sql", async (req, res) => {
+app.get("/import-sql", async (req, res) => {
     try {
         const sqlPath = path.join(process.cwd(), "dump.sql");
         const sql = fs.readFileSync(sqlPath, "utf8");
