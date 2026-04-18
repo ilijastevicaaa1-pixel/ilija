@@ -8,7 +8,7 @@ import XLSX from 'xlsx';
 import bcrypt from 'bcrypt';
 import util from 'util';
 import path from 'path';
-import { getDb, pool } from './db.js';
+import { getDb } from './db.js';
 import loginRouter from './routes/login.js';
 import authRouter from './routes/auth.js';
 import { auth } from './authMiddleware.js';
@@ -50,7 +50,8 @@ app.post("/import-sql", async (req, res) => {
         const sqlPath = path.join(process.cwd(), "dump.sql");
         const sql = fs.readFileSync(sqlPath, "utf8");
 
-        await pool.query(sql);
+        const db = await getDb();
+        await db.query(sql);
 
         res.json({ message: "SQL import uspešan!" });
     } catch (err) {
