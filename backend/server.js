@@ -90,7 +90,7 @@ app.get('/users', async (req, res) => {
 // Import SQL route (CommonJS compatible)
 app.get('/import', async (req, res) => {
     try {
-        const importSQL = (await import('./import-sql.js')).default;
+        const importSQL = (await import('./import-sql.cjs')).default;
         const result = await importSQL();
         res.send(result);
     } catch (err) {
