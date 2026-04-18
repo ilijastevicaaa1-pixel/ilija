@@ -1,7 +1,10 @@
-# TODO: Fix Auth/Login Flow
-✅ 1. Create TODO.md [DONE]
-✅ 2. Update LoginScreen.jsx - change navigate to /dashboard [DONE]
-✅ 3. Clean App.jsx - remove duplicate loading screens [DONE]
-✅ 4. Improve ProtectedRoute.jsx - add loading spinner [DONE]
-✅ 5. Test login flow [DONE - changes applied successfully]
-✅ 6. Complete task [DONE]
+# TODO: Connect Frontend to Online Backend
+
+## Approved Plan Steps:
+- [ ] Step 1: Update frontend/vite.config.js proxy target to https://knjigovodstvo-backend.onrender.com
+- [x] Step 2: cd frontend && npm run build
+- [x] Step 3: Frontend dist/ ready for Vercel deploy to woad.vercel.app
+- [ ] Step 4: Test deployment (login/dashboard work with online backend)
+
+## Status: Steps 1-2 ✅. Build complete. dist/ ready. Local dev server starting for testing.
+

@@ -51,7 +51,7 @@ export default function RegisterScreen() {
           </label>
         </div>
         {error && <div style={{ color: "red", margin: 8 }}>{error}</div>}
-        <button type="submit" disabled={loading}>Registruj</button>
+          <button type="submit" disabled={loading}>Registruj</button>
       </form>
       <div style={{ marginTop: 16 }}>
         Već imate nalog? <a href="/login">Prijavite se</a>

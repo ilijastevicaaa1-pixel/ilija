@@ -2,17 +2,13 @@ import { useAuth } from "../auth/AuthContext.jsx";
 
 export async function apiFetch(url, options = {}, customToken) {
   // Dohvati token iz AuthContext-a ili prosleđen
-  let token = customToken;
+  let token = customToken || localStorage.getItem("saas_token") || localStorage.getItem("token");
   try {
-    // Dinamički import da bi radio i van React komponente
-    const { useAuth } = await import("../auth/AuthContext.jsx");
     if (!token) {
-      try {
-        // Probaj iz localStorage
-        token = localStorage.getItem("token");
-      } catch {}
+      // Probaj iz localStorage
+      token = localStorage.getItem("token");
     }
-  } catch {}
+  } catch { }
   const headers = { ...(options.headers || {}) };
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;

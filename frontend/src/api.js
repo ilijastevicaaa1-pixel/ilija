@@ -1,30 +1,31 @@
-const API_URL = "https://knjigovodstvo-backend.onrender.com";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
-export async function apiFetch(path, options = {}) {
-  const token = localStorage.getItem("jwt");
-  const method = (options.method || 'GET').toUpperCase();
-  let headers = { ...(options.headers || {}) };
-  let fetchOptions = { ...options };
+export const apiFetch = async (path, options = {}) => {
+  const token = localStorage.getItem("token");
 
-  // Za GET ne šalji Content-Type ni body
-  if (method === 'GET') {
-    delete fetchOptions.body;
-  } else {
-    // Ako je body FormData, NE postavljaj Content-Type (browser će sam)
-    if (!(fetchOptions.body instanceof FormData)) {
-      headers["Content-Type"] = "application/json";
-    }
+  let headers = {
+    ...(options.headers || {})
+  };
+
+  // Ako postoji body i NIJE FormData → JSON
+  if (options.body && !(options.body instanceof FormData)) {
+    headers["Content-Type"] = "application/json";
+    options.body = JSON.stringify(options.body);
   }
-  if (token) headers["Authorization"] = `Bearer ${token}`;
-  fetchOptions.headers = headers;
 
-  const response = await fetch(API_URL + path, fetchOptions);
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(API_URL + path, {
+    ...options,
+    headers
+  });
+
   const text = await response.text();
   try {
     return text ? JSON.parse(text) : {};
   } catch {
-    return { error: 'Nevalidan JSON odgovor', raw: text };
+    return { error: "Invalid JSON", raw: text };
   }
-}
-
-
+};

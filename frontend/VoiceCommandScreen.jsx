@@ -18,7 +18,7 @@ async function speak(text, onStart, onEnd) {
 
 
 function VoiceCommandScreen() {
-    const [aiReply, setAiReply] = useState(''); // za prikaz AI odgovora
+  const [aiReply, setAiReply] = useState(''); // za prikaz AI odgovora
   // --- Automatsko paljenje mikrofona na mount (ako nije već pozvano iz TTS) ---
   // Uklonjeno automatsko pokretanje snimanja na mount
 
@@ -44,24 +44,26 @@ function VoiceCommandScreen() {
 
 
   // --- SLANJE AUDIO SNIMKA BACKENDU I AI ODGOVOR ---
-  // --- MAPA: AI action -> { method, path } ---
-  const AI_ACTION_MAP = {
-    kreiraj_fakturu: { method: 'POST', path: '/api/fakture' },
-    kreiraj_izlaznu_fakturu: { method: 'POST', path: '/api/izlazne-fakture' },
-    dodaj_banku: { method: 'POST', path: '/api/banka' },
-    generisi_godisnji_izvestaj: { method: 'POST', path: '/api/godisnji-izvestaji/generisi' },
-    generisi_pdv_period: { method: 'POST', path: '/api/pdv-periodi/generisi' },
-    // Prikaz podataka (GET)
-    prikazi_fakture: { method: 'GET', path: '/api/fakture' },
-    prikazi_izlazne_fakture: { method: 'GET', path: '/api/izlazne-fakture' },
-    prikazi_banku: { method: 'GET', path: '/api/banka' },
-    prikazi_godisnje_izvestaje: { method: 'GET', path: '/api/godisnji-izvestaji' },
-    prikazi_pdv_periode: { method: 'GET', path: '/api/pdv-periodi' },
-    prikazi_dashboard: { method: 'GET', path: '/api/dashboard' },
-    prikazi_kpi: { method: 'GET', path: '/api/kpi' },
-    prikazi_trendove: { method: 'GET', path: '/api/trends' },
-    prikazi_analitiku: { method: 'GET', path: '/api/statistics/expenses' },
-    // Dodaj još po potrebi
+  import { STATE_ACTIONS, getNextQuestion } from './utils/stateActions.js';
+
+  // State machine state
+  const [conversationState, setConversationState] = useState({ action: null, step: 0, data: {}, sessionId: Date.now() });
+  const [nextQuestion, setNextQuestion] = useState('');
+
+  // Load/save state from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem(`voiceState_${conversationState.sessionId}`);
+    if (saved) setConversationState(JSON.parse(saved));
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem(`voiceState_${conversationState.sessionId}`, JSON.stringify(conversationState));
+  }, [conversationState]);
+
+  // Reset state machine
+  const resetStateMachine = () => {
+    setConversationState({ action: null, step: 0, data: {}, sessionId: Date.now() });
+    setNextQuestion('');
   };
 
   // --- Prikaz rezultata AI akcije ---
@@ -109,30 +111,49 @@ function VoiceCommandScreen() {
         setAiReply('');
       }
 
-      // --- AI ACTION DISPATCHER ---
-      if (data && data.extracted && typeof data.extracted === 'object' && data.extracted.action) {
-        const action = data.extracted.action;
-        const mapping = AI_ACTION_MAP[action];
-        if (mapping) {
-          // Pripremi payload bez polja 'action'
-          const payload = { ...data.extracted };
-          delete payload.action;
+      // --- STATE MACHINE DISPATCHER ---
+      // Update state sa novim input-om
+      const newData = { ...conversationState.data, [data.stepField || 'input']: recognizedText };
+      let newState = { ...conversationState, data: newData };
+
+      if (data.intent === 'start_action' && STATE_ACTIONS[data.action]) {
+        newState = { action: data.action, step: 0, data: {}, sessionId: conversationState.sessionId };
+        const q = getNextQuestion(data.action, 0, {});
+        setNextQuestion(q);
+        speak(q || 'Šta želite da uradim?', () => setTtsActive(true), () => setTtsActive(false));
+        return;
+      }
+
+      if (conversationState.action && newState.step < STATE_ACTIONS[conversationState.action]?.steps.length) {
+        const currentStep = newState.step;
+        const config = STATE_ACTIONS[conversationState.action];
+        const stepField = config.steps[currentStep];
+        newData[stepField] = recognizedText;
+
+        if (config.validate?.(newData)) {
+          // Sve prikupljeno → EXECUTE
           try {
-            const res = await apiFetch(mapping.path, {
-              method: mapping.method,
-              body: JSON.stringify(payload)
+            const res = await apiFetch(config.endpoint.path, {
+              method: config.endpoint.method,
+              body: JSON.stringify(newData)
             });
             setActionResult(res);
-            // Prikaži rezultat i pročitaj ga
-            if (res && res.success) {
-              speak('Akcija uspešno izvršena.', () => setTtsActive(true), () => setTtsActive(false));
-            } else if (res && res.error) {
-              speak('Greška: ' + res.error, () => setTtsActive(true), () => setTtsActive(false));
-            }
+            speak(res.success ? 'Uspešno izvršeno!' : ('Greška: ' + (res.error || 'Nepoznato')),
+              () => setTtsActive(true), () => {
+                setTtsActive(false);
+                resetStateMachine();
+              });
           } catch (err) {
             setActionResult({ error: err.message });
-            speak('Greška pri izvršavanju akcije.', () => setTtsActive(true), () => setTtsActive(false));
+            speak('Greška pri izvršavanju.', () => setTtsActive(true), () => setTtsActive(false));
           }
+        } else {
+          // Sledeće pitanje
+          const nextQ = getNextQuestion(conversationState.action, currentStep + 1, newData);
+          newState.step = currentStep + 1;
+          setNextQuestion(nextQ);
+          setConversationState(newState);
+          speak(nextQ, () => setTtsActive(true), () => setTtsActive(false));
         }
       }
 
@@ -276,12 +297,20 @@ function VoiceCommandScreen() {
       <div style={{ maxWidth: 600, margin: '0 auto', fontFamily: 'sans-serif', marginBottom: 24 }}>
         <div style={{ border: '1px solid #ccc', borderRadius: 8, padding: 16, minHeight: 80, marginBottom: 8 }}>
           <div style={{ marginBottom: 8 }}>
-            <span style={{ background: '#1976d2', color: 'white', borderRadius: 4, padding: '2px 8px', fontWeight: 'bold', marginRight: 8 }}>STT</span>
-            <b>Prepoznat tekst:</b> {recognizedText ? recognizedText : <i style={{ color: '#888' }}>Nije prepoznat govor</i>}
+            <span style={{ background: '#1976d2', color: 'white', borderRadius: 4, padding: '2px 8px', fontWeight: 'bold', marginRight: 8 }}>🎤 GOVOR</span>
+            <b>{recognizedText || 'Nije prepoznato...'}</b>
           </div>
+          {conversationState.action && (
+            <div style={{ background: '#e3f2fd', padding: 12, borderRadius: 4, marginBottom: 8 }}>
+              <b>🤖 STATE: {conversationState.action} (korak {conversationState.step + 1}/{STATE_ACTIONS[conversationState.action]?.steps.length})</b>
+              <br />{nextQuestion && <i>{nextQuestion}</i>}
+              <pre style={{ fontSize: 12, marginTop: 4 }}>{JSON.stringify(conversationState.data, null, 2)}</pre>
+              <button onClick={resetStateMachine} style={{ marginTop: 4, padding: '4px 8px', fontSize: 12 }}>Reset</button>
+            </div>
+          )}
           <div>
-            <span style={{ background: '#43a047', color: 'white', borderRadius: 4, padding: '2px 8px', fontWeight: 'bold', marginRight: 8 }}>AI</span>
-            <b>AI odgovor:</b> {aiReply ? aiReply : <i style={{ color: '#888' }}>Nema odgovora</i>}
+            <span style={{ background: '#43a047', color: 'white', borderRadius: 4, padding: '2px 8px', fontWeight: 'bold', marginRight: 8 }}>🤖 AI</span>
+            <b>{aiReply || 'Čeka input...'}</b>
           </div>
         </div>
       </div>

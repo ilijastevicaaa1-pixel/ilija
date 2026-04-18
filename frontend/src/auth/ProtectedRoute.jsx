@@ -1,18 +1,19 @@
+import React from "react";
 import { Navigate } from "react-router-dom";
-import { useAuth } from "../auth/AuthContext";
+import { useAuth } from "../auth/AuthContext.jsx";
 
 export default function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
 
-  // 1) Dok loading traje → prazan ekran
-  if (loading) return null;
+  // Dok AuthProvider učitava user-a - SAKRIVENO
+  if (loading) {
+    return <div>Učitavanje...</div>;
+  }
 
-  // 2) Ako nema usera → login
-  if (!user) {
+  // Ako user ne postoji
+  if (!user || !user.token) {
     return <Navigate to="/login" replace />;
   }
 
-  // 3) Ako je user tu → prikaži stranu
   return children;
 }
-
