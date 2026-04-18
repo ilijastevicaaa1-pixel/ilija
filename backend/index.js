@@ -16,15 +16,7 @@ app.get('/users', async (req, res) => {
 });
 
 // Import SQL route
-app.get('/import', async (req, res) => {
-  try {
-    const { default: importSQL } = await import('./import-sql.cjs');
-    const result = await importSQL();
-    res.send(result);
-  } catch (err) {
-    res.status(500).send(err.toString());
-  }
-});
+// /import moved to server.js - index.js no longer needed
 
 let PORT = process.env.PORT ? Number(process.env.PORT) : 3001;
 let maxTries = 10;
