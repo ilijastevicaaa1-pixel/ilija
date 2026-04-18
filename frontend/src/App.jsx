@@ -85,17 +85,7 @@ function AppWithChat() {
 // ---------------------------------------------------------
 
 function App() {
-  const { loading } = useAuth();
   const [openChat, setOpenChat] = useState(false);
-
-  // Prikaz loading ekrana dok traje loading
-  if (loading) {
-    return (
-      <div style={{ background: '#fff', width: '100vw', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24 }}>
-        Učitavanje...
-      </div>
-    );
-  }
 
   function AppWithRozpocetBtn() {
     const navigate = useNavigate();
@@ -111,7 +101,7 @@ function App() {
       {/* Novo dugme u gornjem desnom uglu */}
       <button
         className="rozpocet-btn"
-        style={{position: 'fixed', top: 24, right: 32, zIndex: 10001}}
+        style={{ position: 'fixed', top: 24, right: 32, zIndex: 10001 }}
         onClick={() => navigate('/rozpocet')}
       >
         Rozpočet

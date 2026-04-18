@@ -6,7 +6,11 @@ export default function ProtectedRoute({ children }) {
 
   // 1) Dok loading traje → prazan ekran
   if (loading) {
-    return null; // ili <div></div>
+    return (
+      <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, zIndex: 9999 }}>
+        Učitavanje...
+      </div>
+    );
   }
 
   // 2) Ako nema usera → login

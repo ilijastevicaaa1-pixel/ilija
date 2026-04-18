@@ -36,8 +36,8 @@ function LoginScreen() {
       }
 
       // Uspešna prijava
-      login(data.token);
-      navigate("/bot-chat");
+      login(data);
+      navigate("/dashboard");
 
     } catch (err) {
       console.error(err);
