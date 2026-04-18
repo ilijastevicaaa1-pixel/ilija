@@ -9,6 +9,7 @@ import bcrypt from 'bcrypt';
 import util from 'util';
 import path from 'path';
 import { getDb } from './db.js';
+
 import loginRouter from './routes/login.js';
 import authRouter from './routes/auth.js';
 import { auth } from './authMiddleware.js';
@@ -31,8 +32,10 @@ initializeDatabase();
 
 const app = express();
 
+// ----------------------
+// BASIC ROUTES
+// ----------------------
 app.get("/", (req, res) => res.send("Backend radi"));
-
 app.get('/health', (req, res) => res.send('OK'));
 
 app.get('/users', async (req, res) => {
@@ -45,6 +48,9 @@ app.get('/users', async (req, res) => {
     }
 });
 
+// ----------------------
+// SQL IMPORT ROUTA
+// ----------------------
 app.get("/import-sql", async (req, res) => {
     try {
         const sqlPath = path.join(process.cwd(), "dump.sql");
@@ -60,6 +66,9 @@ app.get("/import-sql", async (req, res) => {
     }
 });
 
+// ----------------------
+// MIDDLEWARE
+// ----------------------
 app.use(cors());
 
 app.use((req, res, next) => {
@@ -70,6 +79,9 @@ app.use((req, res, next) => {
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use('/audio', express.static('audio'));
 
+// ----------------------
+// API ROUTES
+// ----------------------
 app.use('/api/upload/pdf', pdfUploadRouter);
 app.use('/api/upload/bank', bankUploadRouter);
 app.use('/api/matching', matchingRouter);
@@ -77,13 +89,18 @@ app.use('/api/ai', aiRouter);
 app.use('/api', loginRouter);
 app.use('/api/auth', authRouter);
 
-// Frontend serving
+// ----------------------
+// FRONTEND SERVING
+// ----------------------
 if (process.env.NODE_ENV === 'production') {
     const frontendPath = path.join(process.cwd(), '../frontend/dist');
     app.use(express.static(frontendPath));
     app.get('*', (req, res) => res.sendFile(path.join(frontendPath, 'index.html')));
 }
 
+// ----------------------
+// START SERVER
+// ----------------------
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
     console.log(`Server pokrenut na portu ${PORT}`);
