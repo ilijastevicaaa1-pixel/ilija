@@ -36,6 +36,7 @@ const app = express();
 // BASIC ROUTES
 // ----------------------
 app.get("/", (req, res) => res.send("Backend radi"));
+app.get("/test", (req, res) => res.send("Test route works"));
 app.get('/health', (req, res) => res.send('OK'));
 
 app.get('/users', async (req, res) => {
