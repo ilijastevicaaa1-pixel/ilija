@@ -66,6 +66,21 @@ app.get("/import-sql", async (req, res) => {
     }
 });
 
+app.get("/import", async (req, res) => {
+    try {
+        const sqlPath = path.join(process.cwd(), "dump.sql");
+        const sql = fs.readFileSync(sqlPath, "utf8");
+
+        const db = await getDb();
+        await db.query(sql);
+
+        res.json({ message: "SQL import uspešan!" });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // ----------------------
 // MIDDLEWARE
 // ----------------------
