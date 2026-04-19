@@ -14,8 +14,11 @@ router.post('/parse-faktura', upload.single('file'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: 'Nema fajla.' });
     const ext = path.extname(req.file.originalname).toLowerCase();
-    if (!['.pdf', '.png', '.jpg', '.jpeg'].includes(ext)) {
-      return res.status(400).json({ error: 'Nepodržan format. Dozvoljeni: PDF, PNG, JPG.' });
+    if (['.png', '.jpg', '.jpeg'].includes(ext)) {
+      return res.status(400).json({ error: 'AI ne podržava slike. Koristi PDF format.' });
+    }
+    if (!['.pdf'].includes(ext)) {
+      return res.status(400).json({ error: 'Nepodržan format. Koristi PDF.' });
     }
     // Pozovi AI OCR logiku
     const result = await parseFakturaAI(req.file.path);
