@@ -81,6 +81,21 @@ app.get("/import", async (req, res) => {
     }
 });
 
+app.get("/api/import", async (req, res) => {
+    try {
+        const sqlPath = path.join(process.cwd(), "dump.sql");
+        const sql = fs.readFileSync(sqlPath, "utf8");
+
+        const db = await getDb();
+        await db.query(sql);
+
+        res.json({ message: "SQL import uspešan!" });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // ----------------------
 // MIDDLEWARE
 // ----------------------
@@ -102,6 +117,37 @@ app.use('/api/upload/bank', bankUploadRouter);
 app.use('/api/matching', matchingRouter);
 app.use('/api/ai', aiRouter);
 app.use('/api', loginRouter);
+app.post('/login', async (req, res) => {
+  const { email, password } = req.body;
+  try {
+    const db = await getDb();
+    const result = await db.query('SELECT * FROM users WHERE email = $1', [email]);
+    const user = result.rows[0];
+    if (!user) {
+      return res.status(400).json({ message: "Korisnik ne postoji" });
+    }
+    const valid = await bcrypt.compare(password, user.password_hash);
+    if (!valid) {
+      return res.status(400).json({ message: "Pogrešna lozinka" });
+    }
+    const token = jwt.sign(
+      {
+        id: user.id,
+        email: user.email,
+        tenantId: user.tenantid || user.tenant_id || null
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+    res.json({
+      message: "Uspešna prijava",
+      token
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Greška na serveru" });
+  }
+});
 app.use('/api/auth', authRouter);
 
 // ----------------------
