@@ -38,8 +38,11 @@ const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 router.post('/command', async (req, res) => {
   try {
     const { text, image } = req.body;
-    if (!text && !image) {
-      return res.status(400).json({ error: 'Nema teksta ili slike.' });
+    if (image) {
+      return res.status(400).json({ reply: 'AI asistent trenutno ne podržava slike. Koristi tekstualni opis fakture.' });
+    }
+    if (!text) {
+      return res.status(400).json({ error: 'Nema teksta.' });
     }
     const apiKey = GROQ_API_KEY || OPENAI_API_KEY;
     if (!apiKey) {
@@ -49,7 +52,7 @@ router.post('/command', async (req, res) => {
       model: 'llama-3.3-70b-versatile',
       messages: [
         { role: 'system', content: 'Ti si knjigovodstveni AI asistent. Odgovaraš kratko i precizno na srpskom jeziku.' },
-        { role: 'user', content: text || 'Analiziraj ovu sliku fakture' }
+        { role: 'user', content: text }
       ],
       temperature: 0.7,
       max_tokens: 512
@@ -63,6 +66,9 @@ router.post('/command', async (req, res) => {
     };
     const aiRes = await nodeFetch(url, { method: 'POST', headers, body: JSON.stringify(body) });
     const aiData = await aiRes.json();
+    if (aiData.error) {
+      return res.status(400).json({ reply: aiData.error.message || 'Greška u AI.' });
+    }
     const reply = aiData.choices && aiData.choices[0] && aiData.choices[0].message && aiData.choices[0].message.content;
     res.json({ reply: reply || 'AI odgovor nije dostupan.' });
   } catch (e) {
