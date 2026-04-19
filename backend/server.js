@@ -117,6 +117,10 @@ app.use('/api/upload/bank', bankUploadRouter);
 app.use('/api/matching', matchingRouter);
 app.use('/api/ai', aiRouter);
 app.use('/api', loginRouter);
+app.get('/login', async (req, res) => {
+  res.json({ message: "Login endpoint working" });
+});
+
 app.post('/login', async (req, res) => {
   const { email, password } = req.body;
   try {
