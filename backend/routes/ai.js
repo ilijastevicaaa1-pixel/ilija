@@ -3,6 +3,7 @@ import express from 'express';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import nodeFetch from 'node-fetch';
 import { parseFakturaAI } from '../ocr.js';
 
 const router = express.Router();
@@ -27,6 +28,46 @@ router.post('/parse-faktura', upload.single('file'), async (req, res) => {
   } catch (e) {
     console.error('AI parse error:', e);
     res.status(500).json({ error: e.message || 'Greška u AI parsiranju.' });
+  }
+});
+
+// POST /api/ai/command
+const GROQ_API_KEY = process.env.GROQ_API_KEY;
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+
+router.post('/command', async (req, res) => {
+  try {
+    const { text, image } = req.body;
+    if (!text && !image) {
+      return res.status(400).json({ error: 'Nema teksta ili slike.' });
+    }
+    const apiKey = GROQ_API_KEY || OPENAI_API_KEY;
+    if (!apiKey) {
+      return res.status(500).json({ error: 'AI ključ nije konfigurisan.' });
+    }
+    const body = {
+      model: 'llama-3.3-70b-versatile',
+      messages: [
+        { role: 'system', content: 'Ti si knjigovodstveni AI asistent. Odgovaraš kratko i precizno na srpskom jeziku.' },
+        { role: 'user', content: text || 'Analiziraj ovu sliku fakture' }
+      ],
+      temperature: 0.7,
+      max_tokens: 512
+    };
+    const url = GROQ_API_KEY
+      ? 'https://api.groq.com/openai/v1/chat/completions'
+      : 'https://api.openai.com/v1/chat/completions';
+    const headers = {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`
+    };
+    const aiRes = await nodeFetch(url, { method: 'POST', headers, body: JSON.stringify(body) });
+    const aiData = await aiRes.json();
+    const reply = aiData.choices && aiData.choices[0] && aiData.choices[0].message && aiData.choices[0].message.content;
+    res.json({ reply: reply || 'AI odgovor nije dostupan.' });
+  } catch (e) {
+    console.error('AI command error:', e);
+    res.status(500).json({ error: e.message || 'Greška u AI.' });
   }
 });
 
