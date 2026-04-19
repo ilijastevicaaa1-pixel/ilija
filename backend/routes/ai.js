@@ -41,7 +41,9 @@ const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 router.post('/command', async (req, res) => {
   try {
     const { text, image } = req.body;
+    console.log('[AI /command] Request received:', { hasText: !!text, hasImage: !!image, imageType: typeof image });
     if (image) {
+      console.log('[AI /command] Image received but blocked');
       return res.status(400).json({ reply: 'AI asistent trenutno ne podržava slike. Koristi tekstualni opis fakture.' });
     }
     if (!text) {
@@ -69,6 +71,7 @@ router.post('/command', async (req, res) => {
     };
     const aiRes = await nodeFetch(url, { method: 'POST', headers, body: JSON.stringify(body) });
     const aiData = await aiRes.json();
+    console.log('[AI /command] Response:', aiData);
     if (aiData.error) {
       return res.status(400).json({ reply: aiData.error.message || 'Greška u AI.' });
     }
