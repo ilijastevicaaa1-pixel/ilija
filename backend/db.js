@@ -12,7 +12,9 @@ console.log('PG_DATABASE iz .env:', process.env.PG_DATABASE);
 console.log('PG_HOST iz .env:', process.env.PG_HOST);
 console.log('PG_PORT iz .env:', process.env.PG_PORT);
 
-const poolConfig = process.env.TEST_DB_URL
+const poolConfig = process.env.DATABASE_URL
+  ? { connectionString: process.env.DATABASE_URL }
+  : process.env.TEST_DB_URL
   ? { connectionString: process.env.TEST_DB_URL }
   : {
       host: process.env.PG_HOST || 'localhost',
