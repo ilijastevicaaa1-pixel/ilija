@@ -3,7 +3,9 @@ import path from "path";
 import axios from "axios";
 import dotenv from "dotenv";
 
-dotenv.config();
+if (process.env.NODE_ENV !== 'production') {
+  dotenv.config();
+}
 
 const ELEVEN_API_KEY = process.env.ELEVENLABS_API_KEY;
 
