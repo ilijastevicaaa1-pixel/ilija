@@ -1,10 +1,10 @@
-
 console.log("TEST_VAR iz .env:", process.env.TEST_VAR);
 
 import app from './server.js';
 import fs from 'fs';
 import path from 'path';
 import { getDb } from './db.js';
+import { generateSpeech } from "./tts.js";
 
 // ----------------------
 // HEALTH CHECK
@@ -16,7 +16,7 @@ app.get('/health', (req, res) => res.send('OK'));
 // ----------------------
 app.get('/users', async (req, res) => {
   try {
-    const db = await import('./db.js').then(m => m.getDb());
+    const db = await getDb();
     const result = await db.query('SELECT * FROM users LIMIT 5');
     res.json(result.rows);
   } catch (err) {
@@ -39,6 +39,25 @@ app.get("/import-sql", async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });
+  }
+});
+
+// ----------------------
+// TTS ROUTA  (MORA BITI PRE startServer())
+// ----------------------
+app.post("/tts", async (req, res) => {
+  const { text } = req.body;
+
+  if (!text) {
+    return res.status(400).json({ error: "Text is required" });
+  }
+
+  try {
+    const filePath = await generateSpeech(text);
+    res.json({ audio: filePath });
+  } catch (err) {
+    console.error("TTS error:", err);
+    res.status(500).json({ error: "TTS failed" });
   }
 });
 
@@ -73,24 +92,4 @@ function startServer() {
   });
 }
 
-startServer();
-
-// ----------------------
-// TTS ROUTA
-// ----------------------
-import { generateSpeech } from "./tts.js";
-
-app.post("/tts", async (req, res) => {
-  const { text } = req.body;
-
-  if (!text) {
-    return res.status(400).json({ error: "Text is required" });
-  }
-
-  try {
-    const filePath = await generateSpeech(text);
-    res.json({ audio: filePath });
-  } catch (err) {
-    res.status(500).json({ error: "TTS failed" });
-  }
-});
+startServer()
