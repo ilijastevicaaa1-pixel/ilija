@@ -1,42 +1,56 @@
-
 import dotenv from 'dotenv';
-dotenv.config({ path: process.env.NODE_ENV === 'test' || process.env.VITEST ? './.env.test' : './.env' });
+
+// Učitava .env SAMO lokalno, nikad u produkciji
+if (process.env.NODE_ENV !== 'production') {
+  dotenv.config();
+}
+
 import pg from 'pg';
 const { Pool } = pg;
 
-// PostgreSQL konekcija (Pool)
-console.log('PG_USER iz .env:', process.env.PG_USER);
-console.log('PG_PASSWORD iz .env:', process.env.PG_PASSWORD);
-console.log('Tip PG_PASSWORD:', typeof process.env.PG_PASSWORD, process.env.PG_PASSWORD);
-console.log('PG_DATABASE iz .env:', process.env.PG_DATABASE);
-console.log('PG_HOST iz .env:', process.env.PG_HOST);
-console.log('PG_PORT iz .env:', process.env.PG_PORT);
+// =========================
+// DEBUG ISPIS ENV VARIJABLI
+// =========================
+console.log("=== RENDER ENV DEBUG ===");
+console.log("NODE_ENV:", process.env.NODE_ENV);
+console.log("PG_HOST:", process.env.PG_HOST);
+console.log("PG_USER:", process.env.PG_USER);
+console.log("PG_PASSWORD:", process.env.PG_PASSWORD);
+console.log("PG_DATABASE:", process.env.PG_DATABASE);
+console.log("PG_PORT:", process.env.PG_PORT);
+console.log("DATABASE_URL:", process.env.DATABASE_URL);
+console.log("========================");
 
+// =========================
+// KONFIGURACIJA POOLA
+// =========================
 const poolConfig = process.env.DATABASE_URL
-  ? { connectionString: process.env.DATABASE_URL }
-  : process.env.TEST_DB_URL
-  ? { connectionString: process.env.TEST_DB_URL }
+  ? {
+    connectionString: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false }
+  }
   : {
-      host: process.env.PG_HOST || 'localhost',
-      user: process.env.PG_USER || 'postgres',
-      password: process.env.PG_PASSWORD || 'postgres',
-      database: process.env.PG_DATABASE || 'knjigovodstvo',
-      port: process.env.PG_PORT ? Number(process.env.PG_PORT) : 5432,
-    };
+    host: process.env.PG_HOST,
+    user: process.env.PG_USER,
+    password: process.env.PG_PASSWORD,
+    database: process.env.PG_DATABASE,
+    port: Number(process.env.PG_PORT) || 5432,
+    ssl: { rejectUnauthorized: false }
+  };
 
-console.log('DEBUG POOL CONFIG:');
-for (const [key, value] of Object.entries(poolConfig)) {
-  console.log(`  ${key}:`, value, '| type:', typeof value);
-}
+console.log("=== DEBUG POOL CONFIG ===");
+console.log(poolConfig);
+console.log("========================");
 
 const pool = new Pool(poolConfig);
 
-// Otvara konekciju i omogućava async/await rad
+// =========================
+// EXPORT FUNKCIJA
+// =========================
 export async function getDb() {
   return pool;
 }
 
-// Automatski teardown pool konekcije za testove
 export async function closeDb() {
   await pool.end();
 }
