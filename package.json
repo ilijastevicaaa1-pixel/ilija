@@ -1,8 +1,8 @@
 {
-  "name": "aap-root",
-  "private": true,
+  "name": "knjigovodstvo-backend",
   "version": "1.0.0",
-  "description": "Root package.json (restored)",
-  "main": "index.js",
-  "license": "MIT"
+  "main": "backend/server.js",
+  "scripts": {
+    "start": "node backend/server.js"
+  }
 }
