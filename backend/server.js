@@ -27,6 +27,7 @@ import faktureBatchRouter from './routes/faktureBatch.js';
 import aiRouter from './routes/ai.js';
 import matchingRouter from './routes/matching.js';
 import initializeDatabase from './dbInit.js';
+import { generateSpeech } from "./tts.js";
 
 initializeDatabase();
 
@@ -160,6 +161,25 @@ app.post('/login', async (req, res) => {
 });
 
 app.use('/api/auth', authRouter);
+
+// ----------------------
+// TTS ROUTA
+// ----------------------
+app.post("/tts", async (req, res) => {
+    const { text } = req.body;
+
+    if (!text) {
+        return res.status(400).json({ error: "Text is required" });
+    }
+
+    try {
+        const filePath = await generateSpeech(text);
+        res.json({ audio: filePath });
+    } catch (err) {
+        console.error("TTS error:", err);
+        res.status(500).json({ error: "TTS failed" });
+    }
+});
 
 // ----------------------
 // FRONTEND SERVING
