@@ -42,6 +42,10 @@ app.use(cors());
 app.use('/audio', express.static('audio'));
 
 // BASIC ROUTES
+app.use((req, res, next) => {
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
+    next();
+});
 app.get("/", (req, res) => res.send("Backend radi"));
 app.get("/test", (req, res) => res.send("Test route works"));
 app.get('/health', (req, res) => res.send('OK'));
@@ -133,6 +137,11 @@ app.post('/register', async (req, res) => {
     }
 });
 
+app.get('/register', (req, res) => {
+    console.log('GET /register called from:', req.ip, req.headers['user-agent']);
+    res.json({ message: "Use POST /register with JSON body: {username, email, password}" });
+});
+
 // TTS ROUTA (NEDOSTAJALA)
 app.post("/tts", async (req, res) => {
     const { text } = req.body;
@@ -154,6 +163,17 @@ app.post("/tts", async (req, res) => {
 //     app.use(express.static(frontendPath));
 //     app.get('*', (req, res) => res.sendFile(path.join(frontendPath, 'index.html')));
 // }
+
+// 404 HANDLER - catch all unmatched routes
+app.use((req, res) => {
+    console.log(`404: ${req.method} ${req.path} - No route matched`);
+    res.status(404).json({ 
+        error: "Not Found", 
+        method: req.method, 
+        path: req.path,
+        message: `Cannot ${req.method} ${req.path}. Available routes: GET /, GET /test, GET /health, POST /login, POST /register, POST /tts`
+    });
+});
 
 // START SERVER
 const PORT = process.env.PORT || 10000;
