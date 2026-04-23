@@ -3,14 +3,11 @@ import path from "path";
 import axios from "axios";
 import dotenv from "dotenv";
 
-if (process.env.NODE_ENV !== 'production') {
+if (process.env.NODE_ENV !== "production") {
   dotenv.config();
 }
 
-const ELEVEN_API_KEY = process.env.ELEVENLABS_API_KEY;
-
-// Default voice (možeš promeniti kasnije)
-const VOICE_ID = "JBFqnCBsd6RMkjVDRZzb"; // Rachel
+const GROQ_API_KEY = process.env.GROQ_API_KEY;
 
 export async function generateSpeech(text) {
   try {
@@ -22,14 +19,15 @@ export async function generateSpeech(text) {
     const outputPath = path.join(outputDir, `tts_${Date.now()}.mp3`);
 
     const response = await axios.post(
-      `https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}`,
+      "https://api.groq.com/openai/v1/audio/speech",
       {
-        text,
-        model_id: "eleven_multilingual_v2"
+        model: "gpt-4o-mini-tts",
+        voice: "alloy",
+        input: text
       },
       {
         headers: {
-          "xi-api-key": ELEVEN_API_KEY,
+          Authorization: `Bearer ${GROQ_API_KEY}`,
           "Content-Type": "application/json"
         },
         responseType: "arraybuffer"
@@ -40,7 +38,7 @@ export async function generateSpeech(text) {
     return outputPath;
 
   } catch (error) {
-    console.error("TTS error:", error.response?.data?.toString() || error.message);
+    console.error("TTS error:", error.response?.data || error.message);
     throw new Error("Failed to generate speech");
   }
 }

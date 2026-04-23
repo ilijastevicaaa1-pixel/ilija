@@ -157,6 +157,11 @@ app.post("/tts", async (req, res) => {
     }
 });
 
+// TTS GET za testiranje (dodato privremeno)
+app.get("/tts", (req, res) => {
+    res.json({ message: "Use POST /tts with JSON body: {text: 'your text here'}" });
+});
+
 // FRONTEND SERVING
 // if (process.env.NODE_ENV === 'production') {
 //     const frontendPath = path.join(process.cwd(), '../frontend/dist');
