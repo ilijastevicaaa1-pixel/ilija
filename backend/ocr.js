@@ -32,6 +32,7 @@ export async function parseFakturaAI(filePath) {
   if (!apiKey) {
     throw new Error("GROQ_API_KEY nije podešen. Proverite environment varijable.");
   }
+  console.log('Koristi se Groq API za OCR parsing.');
   const url = 'https://api.groq.com/openai/v1/chat/completions';
   const headers = {
     'Content-Type': 'application/json',
