@@ -24,10 +24,11 @@ export async function parseFakturaAI(filePath) {
     temperature: 0.0,
     max_tokens: 1024
   };
-  const apiKey = process.env.GROQ_API_KEY || process.env.OPENAI_API_KEY;
-  const url = process.env.GROQ_API_KEY
-    ? 'https://api.groq.com/openai/v1/chat/completions'
-    : 'https://api.openai.com/v1/chat/completions';
+  const apiKey = process.env.GROQ_API_KEY;
+  if (!apiKey) {
+    throw new Error("GROQ_API_KEY nije podešen. Proverite environment varijable.");
+  }
+  const url = 'https://api.groq.com/openai/v1/chat/completions';
   const headers = {
     'Content-Type': 'application/json',
     'Authorization': `Bearer ${apiKey}`
