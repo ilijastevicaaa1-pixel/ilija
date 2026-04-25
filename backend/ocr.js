@@ -16,7 +16,7 @@ export async function parseFakturaAI(filePath) {
   // Prompt za LLM: izvuci sva relevantna polja iz fakture
   const prompt = `Ekstraktuj iz sledećeg teksta fakture sva relevantna polja u JSON formatu. Polja: broj_fakture, datum, dobavljač, kupac, iznos, pdv, valuta, stavke (naziv, kolicina, cena, iznos), opis. Ako nešto nije navedeno, stavi null. Tekst:\n"""\n${text}\n"""`;
   const body = {
-    model: 'Llama-3.3-70B-Versatile',
+    model: 'llama-3.1-8b-instant',
     messages: [
       { role: 'system', content: 'Ti si AI za ekstrakciju podataka iz faktura. Vraćaš samo JSON.' },
       { role: 'user', content: prompt }
