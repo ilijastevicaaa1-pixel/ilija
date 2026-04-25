@@ -11,17 +11,20 @@ const GROQ_API_KEY = process.env.GROQ_API_KEY;
 
 export async function generateSpeech(text) {
   try {
+    // Ensure audio output directory exists
     const outputDir = "audio";
     if (!fs.existsSync(outputDir)) {
       fs.mkdirSync(outputDir);
     }
 
+    // Output file path
     const outputPath = path.join(outputDir, `tts_${Date.now()}.mp3`);
 
+    // Groq TTS request
     const response = await axios.post(
       "https://api.groq.com/openai/v1/audio/speech",
       {
-        model: "gpt-4o-mini-tts",
+        model: "gpt-4o-audio-preview",   // ← PRAVI MODEL ZA GROQ TTS
         voice: "alloy",
         input: text
       },
@@ -34,7 +37,9 @@ export async function generateSpeech(text) {
       }
     );
 
+    // Save audio file
     fs.writeFileSync(outputPath, response.data);
+
     return outputPath;
 
   } catch (error) {
