@@ -43,8 +43,8 @@ export async function parseFakturaAI(filePath) {
     aiData = await aiRes.json();
     const content = aiData.choices && aiData.choices[0] && aiData.choices[0].message && aiData.choices[0].message.content;
     extracted = JSON.parse(content);
-  } catch (e) {
-    extracted = { error: 'AI ekstrakcija nije uspela', details: e.message, text };
+    } catch (e) {
+    extracted = { error: 'AI ekstrakcija nije uspela', details: e.message };
   }
   return extracted;
 }
