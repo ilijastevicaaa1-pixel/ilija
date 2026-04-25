@@ -54,7 +54,7 @@ router.post('/command', async (req, res) => {
       return res.status(500).json({ error: 'AI ključ nije konfigurisan.' });
     }
     const body = {
-      model: 'llama-3.3-70b-versatile',
+      model: 'llama-3.1-8b-instant',
       messages: [
         { role: 'system', content: 'Ti si knjigovodstveni AI asistent. Odgovaraš kratko i precizno na srpskom jeziku.' },
         { role: 'user', content: text }

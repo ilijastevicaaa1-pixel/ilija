@@ -29,7 +29,6 @@ import faktureBatchRouter from './routes/faktureBatch.js';
 import aiRouter from './routes/ai.js';
 import matchingRouter from './routes/matching.js';
 import initializeDatabase from './dbInit.js';
-import { generateSpeech } from "./tts.js";
 
 initializeDatabase();
 
@@ -39,7 +38,6 @@ const app = express();
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(cors());
-app.use('/audio', express.static('audio'));
 
 // BASIC ROUTES
 app.use((req, res, next) => {
@@ -142,25 +140,7 @@ app.get('/register', (req, res) => {
     res.json({ message: "Use POST /register with JSON body: {username, email, password}" });
 });
 
-// TTS ROUTA (NEDOSTAJALA)
-app.post("/tts", async (req, res) => {
-    const { text } = req.body;
 
-    if (!text) return res.status(400).json({ error: "Text is required" });
-
-    try {
-        const filePath = await generateSpeech(text);
-        res.json({ audio: filePath });
-    } catch (err) {
-        console.error("TTS error:", err);
-        res.status(500).json({ error: "TTS failed" });
-    }
-});
-
-// TTS GET za testiranje (dodato privremeno)
-app.get("/tts", (req, res) => {
-    res.json({ message: "Use POST /tts with JSON body: {text: 'your text here'}" });
-});
 
 // FRONTEND SERVING
 // if (process.env.NODE_ENV === 'production') {
@@ -176,7 +156,7 @@ app.use((req, res) => {
         error: "Not Found", 
         method: req.method, 
         path: req.path,
-        message: `Cannot ${req.method} ${req.path}. Available routes: GET /, GET /test, GET /health, POST /login, POST /register, POST /tts`
+        message: `Cannot ${req.method} ${req.path}. Available routes: GET /, GET /test, GET /health, POST /login, POST /register`
     });
 });
 
