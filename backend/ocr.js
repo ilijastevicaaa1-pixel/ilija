@@ -13,6 +13,10 @@ export async function extractTextFromImage(imagePath) {
 // Napredna AI funkcija za parsiranje fakture iz teksta
 export async function parseFakturaAI(filePath) {
   const text = await extractTextFromImage(filePath);
+  if (!text || typeof text !== 'string') {
+    return { error: 'Tekst je prazan ili nije validan nakon ekstrakcije.', details: 'OCR nije vratio tekst.' };
+  }
+
   // Prompt za LLM: izvuci sva relevantna polja iz fakture
   const prompt = `Ekstraktuj iz sledećeg teksta fakture sva relevantna polja u JSON formatu. Polja: broj_fakture, datum, dobavljač, kupac, iznos, pdv, valuta, stavke (naziv, kolicina, cena, iznos), opis. Ako nešto nije navedeno, stavi null. Tekst:\n"""\n${text}\n"""`;
   const body = {
