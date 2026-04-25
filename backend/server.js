@@ -90,9 +90,10 @@ app.get('/login', (req, res) => {
 // LOGIN REAL
 app.post('/login', async (req, res) => {
     const { email, password } = req.body;
+    const loginField = email || req.body.username; // podrška za email ili username
     try {
         const db = await getDb();
-        const result = await db.query('SELECT * FROM users WHERE email = $1', [email]);
+        const result = await db.query('SELECT * FROM users WHERE email = $1 OR username = $1', [loginField]);
         const user = result.rows[0];
         if (!user) return res.status(400).json({ message: "Korisnik ne postoji" });
 

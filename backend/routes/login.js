@@ -6,10 +6,11 @@ import { getDb } from "../db.js";
 const router = express.Router();
 
 router.post("/login", async (req, res) => {
-  const { email, password } = req.body;
-  try {
-    const db = await getDb();
-    const result = await db.query('SELECT * FROM users WHERE email = $1', [email]);
+    const { email, password } = req.body;
+    const loginField = email || req.body.username;
+    try {
+        const db = await getDb();
+        const result = await db.query('SELECT * FROM users WHERE email = $1 OR username = $1', [loginField]);
     const user = result.rows[0];
     if (!user) {
       return res.status(400).json({ message: "Korisnik ne postoji" });
