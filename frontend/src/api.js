@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL ?? "";
+const API_URL = import.meta.env.VITE_API_URL || "https://knjigovodstvo-backend.onrender.com";
 
 export const apiFetch = async (path, options = {}) => {
   const token = localStorage.getItem("token");
