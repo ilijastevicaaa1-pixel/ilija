@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useAuth } from "../auth/AuthContext.jsx";
 import AssistantChatWindow from "../components/chat/AssistantChatWindow.jsx";
 import "../styles/dashboard.css";
+import { apiFetch } from "../api.js";
 
 // import WarehouseMenu from "../components/WarehouseMenu";
 // import SimpleBarChart from "../components/SimpleBarChart";
@@ -30,7 +31,7 @@ function DashboardScreen() {
   async function fetchData() {
     try {
       setLoading(true);
-      const res = await fetch("/api/dashboard");
+      const res = await apiFetch("/api/dashboard");
       const data = await res.json();
       setDashboard(data);
     } catch (err) {
