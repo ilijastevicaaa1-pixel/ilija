@@ -35,6 +35,7 @@ function DashboardScreen() {
       const data = await res.json();
       setDashboard(data);
     } catch (err) {
+      console.error("Dashboard fetch error:", err);
       setError("Greška pri učitavanju podataka");
     } finally {
       setLoading(false);
