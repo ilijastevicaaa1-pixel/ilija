@@ -171,6 +171,26 @@ app.get('/api/dashboard', async (req, res) => {
   }
 });
 
+// Additional dashboard route (tvoj kod)
+app.get("/dashboard", async (req, res) => {
+    try {
+        const db = await getDb();
+
+        // Primer: vrati broj korisnika, faktura, itd.
+        const users = await db.query("SELECT COUNT(*) FROM users");
+        const invoices = await db.query("SELECT COUNT(*) FROM invoices");
+
+        res.json({
+            status: "ok",
+            users: users.rows[0].count,
+            invoices: invoices.rows[0].count
+        });
+    } catch (err) {
+        console.error("Dashboard backend error:", err);
+        res.status(500).json({ error: "Dashboard error", details: err.message });
+    }
+});
+
 // 404 HANDLER - catch all unmatched routes
 app.use((req, res) => {
     console.log(`404: ${req.method} ${req.path} - No route matched`);
