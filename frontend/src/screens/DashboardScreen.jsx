@@ -31,8 +31,10 @@ function DashboardScreen() {
   async function fetchData() {
     try {
       setLoading(true);
-      const res = await apiFetch("/api/dashboard");
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:10000'}/api/dashboard`);
+      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
       const data = await res.json();
+      console.log("Dashboard data:", data);
       setDashboard(data);
     } catch (err) {
       console.error("Dashboard fetch error:", err);
