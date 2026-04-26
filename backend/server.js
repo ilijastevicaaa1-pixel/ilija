@@ -150,6 +150,27 @@ app.get('/register', (req, res) => {
 //     app.get('*', (req, res) => res.sendFile(path.join(frontendPath, 'index.html')));
 // }
 
+// DASHBOARD API (demo)
+app.get('/api/dashboard', async (req, res) => {
+  try {
+    const db = await getDb();
+    const [users, invoices, recent] = await Promise.all([
+      db.query('SELECT COUNT(*) as count FROM users'),
+      db.query('SELECT COUNT(*) as count FROM invoices'),
+      db.query('SELECT * FROM invoices ORDER BY created_at DESC LIMIT 5')
+    ]).catch(() => [null, null, null]);
+
+    res.json({
+      users: users?.rows[0]?.count || 0,
+      invoices: invoices?.rows[0]?.count || 0,
+      recentInvoices: recent?.rows || [],
+      status: 'ok'
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // 404 HANDLER - catch all unmatched routes
 app.use((req, res) => {
     console.log(`404: ${req.method} ${req.path} - No route matched`);
