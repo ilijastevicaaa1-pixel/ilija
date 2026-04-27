@@ -101,20 +101,6 @@ function parseMenuNumber(text) {
   const joined = tokens.join("");
 
   const wordMap = {
-    // SR
-    jedan: "1",
-    jedna: "1",
-    jedno: "1",
-    dva: "2",
-    tri: "3",
-    cetiri: "4",
-    pet: "5",
-    sest: "6",
-    sedam: "7",
-    osam: "8",
-    devet: "9",
-    deset: "10",
-    jedanaest: "11",
     // SK
     jeden: "1",
     jedna_sk: "1",
@@ -130,8 +116,6 @@ function parseMenuNumber(text) {
   };
 
   for (const token of tokens) {
-    if (token === "jedna") return "1";
-    if (token === "sest") return "6";
     if (wordMap[token]) return wordMap[token];
   }
 
@@ -226,8 +210,7 @@ function AssistantChatWindow({ onClose }) {
     const voices = voicesRef.current;
     const preferredVoice =
       voices.find((voice) => voice.lang?.toLowerCase().startsWith("sk")) ||
-      voices.find((voice) => voice.lang?.toLowerCase().startsWith("cs")) ||
-      voices.find((voice) => voice.lang?.toLowerCase().startsWith("sr"));
+      voices.find((voice) => voice.lang?.toLowerCase().startsWith("cs"));
 
     if (preferredVoice) utterance.voice = preferredVoice;
     utterance.lang = preferredVoice?.lang || "sk-SK";
@@ -445,7 +428,7 @@ function AssistantChatWindow({ onClose }) {
           <header className="modern-chat-header">
             <div>
               <h3>Asistent</h3>
-              <p>Slovensko + srpski</p>
+              <p>Slovensko</p>
             </div>
             <button type="button" className="modern-chat-close" onClick={onClose} aria-label="Zatvori chat">
               ×
