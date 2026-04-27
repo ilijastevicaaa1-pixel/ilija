@@ -3,20 +3,22 @@ import { apiFetch } from "../../api.js";
 
 
 const greeting =
-    "Dobry den, ako vam mozem pomoct?\n" +
-    "Ponukam tieto sluzby:\n" +
-    "1) Fakturacia\n" +
-    "2) Bankove operacie\n" +
+    "Dobrý deň...\n\n" +
+    "Ako vám môžem pomôcť?\n\n" +
+    "Ponúkam tieto služby:\n" +
+    "1) Fakturácia\n" +
+    "2) Bankové operácie\n" +
     "3) DPH\n" +
-    "4) Vydavky\n" +
-    "5) Prijmy\n" +
+    "4) Výdavky\n" +
+    "5) Príjmy\n" +
     "6) Reporty\n" +
     "7) Dokumenty\n" +
-    "8) Zakaznici\n" +
+    "8) Zákazníci\n" +
     "9) Projekty\n" +
     "10) Asistent\n" +
-    "11) Skladove hospodarstvo\n\n" +
-    "Prosim, vyberte si jednu z moznosti (napiste cislo).";
+    "11) Skladové hospodárstvo\n\n" +
+    "Prosím, vyberte si jednu z možností (napíšte číslo).";
+
 
 const subOptions = {
     fakturacia: {
