@@ -316,7 +316,7 @@ function AssistantChatWindow({ onClose }) {
       return;
     }
 
-    // Ako je korisnik u kategoriji i izgovori broj/rec broja van opsega, vrati ga u meni kategorije.
+    // Ak je kategória už vybraná a používateľ zadá číslo 1..n, interpretuje sa ako podvoľba danej kategórie.
     if (activeCategory && parseMenuNumber(trimmed)) {
       const retryMessage = formatSubOptions(activeCategory);
       setMessages((prev) => [...prev, { role: "assistant", text: retryMessage }]);
@@ -355,7 +355,7 @@ function AssistantChatWindow({ onClose }) {
         setTimeout(() => fileInputRef.current?.click(), 250);
       }
     } catch {
-      const errorMessage = "Vyskytla sa chyba pri komunikacii so serverom.";
+      const errorMessage = "Vyskytla sa chyba pri komunikácii so serverom.";
       setMessages((prev) => [
         ...prev,
         { role: "assistant", text: errorMessage },
@@ -368,11 +368,11 @@ function AssistantChatWindow({ onClose }) {
 
   const toggleSpeech = () => {
     setSpeechError("");
-    // Kada korisnik ukljuci mikrofon, asistent prestaje da cita naglas.
+    // Po aktivácii mikrofonu asistent prestáva hlasovo čítať.
     window.speechSynthesis?.cancel();
 
     if (!SpeechRecognitionApi) {
-      setSpeechError("Voice input nie je podporovany v tomto prehliadaci.");
+      setSpeechError("Hlasový vstup nie je podporovaný v tomto prehliadači.");
       return;
     }
 
@@ -390,7 +390,7 @@ function AssistantChatWindow({ onClose }) {
 
     recognition.onstart = () => setIsListening(true);
     recognition.onerror = (event) => {
-      setSpeechError(`Chyba mikrofonu: ${event.error || "neznama chyba"}`);
+      setSpeechError(`Chyba mikrofónu: ${event.error || "neznáma chyba"}`);
     };
     recognition.onend = () => {
       setIsListening(false);
@@ -398,7 +398,7 @@ function AssistantChatWindow({ onClose }) {
       if (transcript) {
         lastTranscriptRef.current = "";
         setInput(transcript);
-        // Posalji automatski ono sto je korisnik izgovorio.
+        // Automaticky odošle to, čo používateľ povie.
         sendMessage(transcript);
       }
     };
