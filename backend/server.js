@@ -1,3 +1,6 @@
+import dotenv from "dotenv";
+dotenv.config();
+
 import express from 'express';
 import cors from 'cors';
 import multer from 'multer';
@@ -28,9 +31,14 @@ import issuesRouter from './routes/issues.js';
 import faktureBatchRouter from './routes/faktureBatch.js';
 import aiRouter from './routes/ai.js';
 import matchingRouter from './routes/matching.js';
+import bankRoutes from './routes/bankRoutes.js';
+import tinkCallback from './routes/tinkCallback.js';
+import bankTransactions from './routes/bankTransactions.js';
 import initializeDatabase from './dbInit.js';
 
-initializeDatabase();
+if (process.env.NODE_ENV !== "development") {
+    initializeDatabase();
+}
 
 const app = express();
 
@@ -81,6 +89,11 @@ app.use('/api/matching', matchingRouter);
 app.use('/api/ai', aiRouter);
 app.use('/api', loginRouter);
 app.use('/api/auth', authRouter);
+
+// TINK BANK INTEGRATION
+app.use('/api/bank', bankRoutes);
+app.use('/api/tink', tinkCallback);
+app.use('/api/bank', bankTransactions);
 
 // LOGIN TEST
 app.get('/login', (req, res) => {
@@ -150,53 +163,95 @@ app.get('/register', (req, res) => {
 //     app.get('*', (req, res) => res.sendFile(path.join(frontendPath, 'index.html')));
 // }
 
-// DASHBOARD API (demo)
+// DASHBOARD API
 app.get('/api/dashboard', async (req, res) => {
-  try {
-    const db = await getDb();
-    const [users, invoices, recent] = await Promise.all([
-      db.query('SELECT COUNT(*) as count FROM users'),
-      db.query('SELECT COUNT(*) as count FROM invoices'),
-      db.query('SELECT * FROM invoices ORDER BY created_at DESC LIMIT 5')
-    ]).catch(() => [null, null, null]);
-
-    res.json({
-      users: users?.rows[0]?.count || 0,
-      invoices: invoices?.rows[0]?.count || 0,
-      recentInvoices: recent?.rows || [],
-      status: 'ok'
-    });
-  } catch (err) {
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-// Additional dashboard route (tvoj kod)
-app.get("/dashboard", async (req, res) => {
     try {
         const db = await getDb();
 
-        // Primer: vrati broj korisnika, faktura, itd.
-        const users = await db.query("SELECT COUNT(*) FROM users");
-        const invoices = await db.query("SELECT COUNT(*) FROM invoices");
+        let totalUsers = 0, totalInputInvoices = 0, totalOutputInvoices = 0;
+        let totalIncome = 0, totalExpense = 0, profit = 0;
+        let recentTransactions = [], upcomingDeadlines = [], recentInvoices = [];
+
+        try {
+            const u = await db.query('SELECT COUNT(*) as count FROM users');
+            totalUsers = parseInt(u.rows[0].count, 10);
+        } catch (e) { /* tabela može ne postojati */ }
+
+        try {
+            const ii = await db.query('SELECT COUNT(*) as count FROM input_invoices');
+            totalInputInvoices = parseInt(ii.rows[0].count, 10);
+        } catch (e) { }
+
+        try {
+            const oi = await db.query('SELECT COUNT(*) as count FROM output_invoices');
+            totalOutputInvoices = parseInt(oi.rows[0].count, 10);
+        } catch (e) { }
+
+        try {
+            const inc = await db.query("SELECT COALESCE(SUM(iznos),0) as sum FROM transakcije WHERE tip='prihod'");
+            totalIncome = parseFloat(inc.rows[0].sum) || 0;
+        } catch (e) { }
+
+        try {
+            const exp = await db.query("SELECT COALESCE(SUM(iznos),0) as sum FROM transakcije WHERE tip='rashod'");
+            totalExpense = parseFloat(exp.rows[0].sum) || 0;
+        } catch (e) { }
+
+        profit = totalIncome - totalExpense;
+
+        try {
+            const rt = await db.query("SELECT * FROM transakcije ORDER BY datum DESC LIMIT 5");
+            recentTransactions = rt.rows;
+        } catch (e) { }
+
+        try {
+            const ri = await db.query(
+                `SELECT invoice_number as title, total_amount as amount, supplier as party, issue_date as date, 'input' as type
+         FROM input_invoices ORDER BY issue_date DESC LIMIT 3`
+            );
+            const ro = await db.query(
+                `SELECT invoice_number as title, total_amount as amount, customer as party, issue_date as date, 'output' as type
+         FROM output_invoices ORDER BY issue_date DESC LIMIT 2`
+            );
+            recentInvoices = [...ri.rows, ...ro.rows];
+        } catch (e) { }
+
+        try {
+            const dl = await db.query(
+                `SELECT * FROM deadlines WHERE deadline_date >= CURRENT_DATE ORDER BY deadline_date ASC LIMIT 5`
+            );
+            upcomingDeadlines = dl.rows;
+        } catch (e) { }
 
         res.json({
-            status: "ok",
-            users: users.rows[0].count,
-            invoices: invoices.rows[0].count
+            status: 'ok',
+            users: totalUsers,
+            inputInvoices: totalInputInvoices,
+            outputInvoices: totalOutputInvoices,
+            income: totalIncome,
+            expense: totalExpense,
+            profit: profit,
+            recentTransactions: recentTransactions,
+            recentInvoices: recentInvoices,
+            upcomingDeadlines: upcomingDeadlines
         });
     } catch (err) {
-        console.error("Dashboard backend error:", err);
-        res.status(500).json({ error: "Dashboard error", details: err.message });
+        console.error("Dashboard error:", err);
+        res.status(500).json({ error: 'Server error', details: err.message });
     }
+});
+
+// Alias za stare frontend pozive
+app.get("/dashboard", async (req, res) => {
+    res.redirect('/api/dashboard');
 });
 
 // 404 HANDLER - catch all unmatched routes
 app.use((req, res) => {
     console.log(`404: ${req.method} ${req.path} - No route matched`);
-    res.status(404).json({ 
-        error: "Not Found", 
-        method: req.method, 
+    res.status(404).json({
+        error: "Not Found",
+        method: req.method,
         path: req.path,
         message: `Cannot ${req.method} ${req.path}. Available routes: GET /, GET /test, GET /health, POST /login, POST /register`
     });
@@ -209,4 +264,3 @@ app.listen(PORT, () => {
 });
 
 export default app;
-
