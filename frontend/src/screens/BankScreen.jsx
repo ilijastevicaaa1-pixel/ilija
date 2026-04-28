@@ -1,8 +1,14 @@
 import React, { useState } from "react";
 import "../styles/bank-modern.css";
-// dodaj ovaj CSS fajl
 
 function BankScreen() {
+    const [bankInfo, setBankInfo] = useState({
+        bankName: "",
+        iban: "",
+        bic: "",
+        accountNumber: ""
+    });
+
     const [transactions, setTransactions] = useState([]);
     const [form, setForm] = useState({
         date: "",
@@ -11,6 +17,14 @@ function BankScreen() {
         account: "",
         type: ""
     });
+
+    const handleBankChange = (e) => {
+        setBankInfo({ ...bankInfo, [e.target.name]: e.target.value });
+    };
+
+    const handleBankSave = () => {
+        console.log("Sačuvano:", bankInfo);
+    };
 
     const handleChange = (e) => {
         setForm({ ...form, [e.target.name]: e.target.value });
@@ -37,7 +51,58 @@ function BankScreen() {
             <div className="bank-card">
                 <h1 className="title">🏦 Bankovne transakcije</h1>
 
-                {/* Forma */}
+                {/* BANK INFO BLOK */}
+                <div className="bank-info">
+                    <h2 className="subtitle">Podaci o banci</h2>
+
+                    <div className="form-grid">
+                        <input
+                            type="text"
+                            name="bankName"
+                            placeholder="Naziv banke"
+                            value={bankInfo.bankName}
+                            onChange={handleBankChange}
+                            className="input"
+                        />
+
+                        <input
+                            type="text"
+                            name="iban"
+                            placeholder="IBAN"
+                            value={bankInfo.iban}
+                            onChange={handleBankChange}
+                            className="input"
+                        />
+
+                        <input
+                            type="text"
+                            name="bic"
+                            placeholder="BIC / SWIFT"
+                            value={bankInfo.bic}
+                            onChange={handleBankChange}
+                            className="input"
+                        />
+
+                        <input
+                            type="text"
+                            name="accountNumber"
+                            placeholder="Broj računa"
+                            value={bankInfo.accountNumber}
+                            onChange={handleBankChange}
+                            className="input"
+                        />
+
+                        <button
+                            className="btn-primary"
+                            style={{ gridColumn: "span 4" }}
+                            onClick={handleBankSave}
+                        >
+                            Sačuvaj banku
+                        </button>
+                    </div>
+                </div>
+
+                {/* TRANSAKCIJE */}
                 <form onSubmit={handleAdd} className="form-grid">
                     <input type="date" name="date" value={form.date} onChange={handleChange} className="input" />
                     <input type="text" name="description" placeholder="Opis" value={form.description} onChange={handleChange} className="input" />
@@ -53,7 +118,6 @@ function BankScreen() {
                     <button type="submit" className="btn-primary">Dodaj</button>
                 </form>
 
-                {/* Tabela */}
                 <table className="table">
                     <thead>
                         <tr>
