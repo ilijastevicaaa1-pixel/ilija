@@ -11,7 +11,7 @@ import SaasLogin from "./pages/SaasLogin";
 import DashboardScreen from "./pages/DashboardScreen";
 import DeadlinesScreen from "./pages/DeadlinesScreen";
 import Rozpocet from "./pages/Rozpocet";
-import withBookkeeper from "./pages/withBookkeeper";
+import WithBookkeeper from "./pages/WithBookkeeper";
 
 // AI / Inteligentni sistemi
 import AiBatchScreen from "./pages/AiBatchScreen";
@@ -84,7 +84,7 @@ function App() {
                     path="/with-bookkeeper"
                     element={
                         <ProtectedRoute>
-                            {withBookkeeper}
+                            <WithBookkeeper />
                         </ProtectedRoute>
                     }
                 />
