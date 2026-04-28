@@ -1,1 +1,1 @@
-export { default } from "../Rozpocet.jsx";
+export { default } from "../screens/Rozpocet.jsx";
