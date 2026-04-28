@@ -1,5 +1,4 @@
 import React from "react";
-import { Pie, Bar, Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
   ArcElement,
@@ -10,8 +9,8 @@ import {
   BarElement,
   PointElement,
   LineElement,
-  Title
 } from "chart.js";
+import { Pie, Bar, Line } from "react-chartjs-2";
 
 ChartJS.register(
   ArcElement,
@@ -21,8 +20,7 @@ ChartJS.register(
   LinearScale,
   BarElement,
   PointElement,
-  LineElement,
-  Title
+  LineElement
 );
 
 export function BudgetPieChart({ data }) {

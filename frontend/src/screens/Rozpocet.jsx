@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { BudgetPieChart, BudgetBarChart, BudgetLineChart } from "./components/BudgetCharts.jsx";
+import { BudgetPieChart, BudgetBarChart, BudgetLineChart } from "../components/BudgetCharts.jsx";
 
 const defaultCategories = [
     { nazov: "Jedlo", limit: 0 },
@@ -910,4 +910,5 @@ function Rozpocet() {
     );
 }
 
-export default Rozpocet;// Nalepi ovde svoju komponentu
+
+export default Rozpocet;
