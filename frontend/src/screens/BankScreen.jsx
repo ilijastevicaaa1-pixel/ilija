@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import "./bank-modern.css"; // dodaj ovaj CSS fajl
+import "../styles/bank-modern.css";
+// dodaj ovaj CSS fajl
 
 function BankScreen() {
     const [transactions, setTransactions] = useState([]);
