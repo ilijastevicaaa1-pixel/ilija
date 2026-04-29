@@ -1,6 +1,25 @@
-# Prevod na slovački
+# Todo - Knjigovodstvo App
 
-**Status: U toku**
+## ✅ Završeno
+- [x] Backend Tink bank integracija
+  - `/api/bank/connect` ✅
+  - `/api/tink/callback` ✅ 
+  - `/api/bank/transactions` ✅
+- [x] Rokovnik route u App.jsx
+- [x] Moderni Rokovnik v2.0
+  - Kanban board
+  - Edit/delete/completed
+  - LocalStorage
+  - Filters/sort
+  - Glassmorphism UI
+- [x] Očistio CSS fajlove
 
-## 1. ✅ Backend rute kreirane
-- [x] `backend/routes/bankRoutes.js` — `/api
+## 🔄 U toku
+- 
+
+## ⏳ Sledeće
+- Prevedite frontend na slovački  
+- Git commit & push
+- Test na produkciji
+
+**Poslednja izmena:** `rokovnik-modern-v2.css` ✅
