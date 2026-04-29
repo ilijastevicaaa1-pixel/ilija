@@ -9,7 +9,7 @@ function Rokovnik() {
 
     const handleAdd = (e) => {
         e.preventDefault();
-        if (!note) return;
+        if (!note.trim()) return;
 
         setTasks(prev => [
             ...prev,
@@ -61,7 +61,7 @@ function Rokovnik() {
                         <option value="high">Vysoká priorita</option>
                     </select>
 
-                    <button className="btn-primary">Pridať</button>
+                    <button className="btn-primary" type="submit">Pridať</button>
                 </form>
 
                 <div className="task-list">
