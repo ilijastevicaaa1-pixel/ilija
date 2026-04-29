@@ -85,7 +85,7 @@ function Rokovnik() {
     return (
         <div className="rokovnik-app">
             <div className="header">
-                <h1>📘 Moderný Rokovník</h1>
+                <h1>📘 Rokovník</h1>
 
                 <div className="stats">
                     <div className="stat">Úlohy: {tasks.length}</div>
