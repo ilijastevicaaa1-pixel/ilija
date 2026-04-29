@@ -267,9 +267,19 @@ function App() {
                     }
                 />
 
+                {/* Rokovnik */}
+                <Route
+                    path="/rokovnik"
+                    element={
+                        <ProtectedRoute>
+                            <Rokovnik />
+                        </ProtectedRoute>
+                    }
+                />
             </Routes>
         </Router>
     );
 }
 
 export default App;
+
