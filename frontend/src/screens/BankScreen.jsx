@@ -23,7 +23,7 @@ function BankScreen() {
     };
 
     const handleBankSave = () => {
-        console.log("Sačuvano:", bankInfo);
+        console.log("Uložené:", bankInfo);
     };
 
     const handleChange = (e) => {
@@ -49,17 +49,17 @@ function BankScreen() {
     return (
         <div className="bank-bg">
             <div className="bank-card">
-                <h1 className="title">🏦 Bankovne transakcije</h1>
+                <h1 className="title">🏦 Bankové transakcie</h1>
 
                 {/* BANK INFO BLOK */}
                 <div className="bank-info">
-                    <h2 className="subtitle">Podaci o banci</h2>
+                    <h2 className="subtitle">Údaje o banke</h2>
 
                     <div className="form-grid">
                         <input
                             type="text"
                             name="bankName"
-                            placeholder="Naziv banke"
+                            placeholder="Názov banky"
                             value={bankInfo.bankName}
                             onChange={handleBankChange}
                             className="input"
@@ -86,7 +86,7 @@ function BankScreen() {
                         <input
                             type="text"
                             name="accountNumber"
-                            placeholder="Broj računa"
+                            placeholder="Číslo účtu"
                             value={bankInfo.accountNumber}
                             onChange={handleBankChange}
                             className="input"
@@ -97,36 +97,71 @@ function BankScreen() {
                             style={{ gridColumn: "span 4" }}
                             onClick={handleBankSave}
                         >
-                            Sačuvaj banku
+                            Uložiť banku
                         </button>
                     </div>
                 </div>
 
-                {/* TRANSAKCIJE */}
+                {/* TRANSAKCIE */}
                 <form onSubmit={handleAdd} className="form-grid">
-                    <input type="date" name="date" value={form.date} onChange={handleChange} className="input" />
-                    <input type="text" name="description" placeholder="Opis" value={form.description} onChange={handleChange} className="input" />
-                    <input type="number" name="amount" placeholder="Iznos" value={form.amount} onChange={handleChange} className="input" />
-                    <input type="text" name="account" placeholder="Račun" value={form.account} onChange={handleChange} className="input" />
+                    <input
+                        type="date"
+                        name="date"
+                        value={form.date}
+                        onChange={handleChange}
+                        className="input"
+                    />
 
-                    <select name="type" value={form.type} onChange={handleChange} className="input">
-                        <option value="">Tip</option>
-                        <option value="priliv">Priliv</option>
+                    <input
+                        type="text"
+                        name="description"
+                        placeholder="Popis"
+                        value={form.description}
+                        onChange={handleChange}
+                        className="input"
+                    />
+
+                    <input
+                        type="number"
+                        name="amount"
+                        placeholder="Suma"
+                        value={form.amount}
+                        onChange={handleChange}
+                        className="input"
+                    />
+
+                    <input
+                        type="text"
+                        name="account"
+                        placeholder="Účet"
+                        value={form.account}
+                        onChange={handleChange}
+                        className="input"
+                    />
+
+                    <select
+                        name="type"
+                        value={form.type}
+                        onChange={handleChange}
+                        className="input"
+                    >
+                        <option value="">Typ</option>
+                        <option value="priliv">Príliv</option>
                         <option value="odliv">Odliv</option>
                     </select>
 
-                    <button type="submit" className="btn-primary">Dodaj</button>
+                    <button type="submit" className="btn-primary">Pridať</button>
                 </form>
 
                 <table className="table">
                     <thead>
                         <tr>
-                            <th>Datum</th>
-                            <th>Opis</th>
-                            <th>Iznos</th>
-                            <th>Račun</th>
-                            <th>Tip</th>
-                            <th>Akcije</th>
+                            <th>Dátum</th>
+                            <th>Popis</th>
+                            <th>Suma</th>
+                            <th>Účet</th>
+                            <th>Typ</th>
+                            <th>Akcie</th>
                         </tr>
                     </thead>
 
@@ -147,7 +182,7 @@ function BankScreen() {
                         {transactions.length === 0 && (
                             <tr>
                                 <td colSpan="6" className="empty">
-                                    Nema transakcija. Dodaj prvu iznad.
+                                    Žiadne transakcie. Pridaj prvú vyššie.
                                 </td>
                             </tr>
                         )}
