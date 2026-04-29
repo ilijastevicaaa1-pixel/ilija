@@ -34,7 +34,7 @@ function DashboardScreen() {
             setDashboard(data);
         } catch (err) {
             console.error("FETCH ERROR:", err);
-            setError("Greška pri učitavanju podataka");
+            setError("Chyba pri načítavaní údajov");
         } finally {
             setLoading(false);
         }
@@ -47,7 +47,7 @@ function DashboardScreen() {
     }, []);
 
     if (loading) {
-        return <div style={{ margin: 40, opacity: 0.7 }}>Loading dashboard...</div>;
+        return <div style={{ margin: 40, opacity: 0.7 }}>Načítavam nástenku...</div>;
     }
 
     if (error) {
@@ -80,7 +80,31 @@ function DashboardScreen() {
                 Banka
             </a>
 
-            {/* Rokovnik button */}
+            {/* Rokovník button (NOVO DUGME) */}
+            <a
+                href="/rokovnik"
+                style={{
+                    position: "fixed",
+                    top: "100px",
+                    left: "30px",
+                    padding: "12px 24px",
+                    background: "linear-gradient(135deg, #03A9F4, #0288D1)",
+                    color: "white",
+                    textDecoration: "none",
+                    borderRadius: "12px",
+                    fontWeight: "bold",
+                    fontSize: "1rem",
+                    boxShadow: "0 4px 14px rgba(3,169,244,0.4)",
+                    transition: "0.3s",
+                    zIndex: 999
+                }}
+                onMouseEnter={(e) => (e.target.style.transform = "scale(1.05)")}
+                onMouseLeave={(e) => (e.target.style.transform = "scale(1)")}
+            >
+                Rokovník
+            </a>
+
+            {/* Termíny button */}
             <a
                 href="/deadlines"
                 style={{
@@ -101,7 +125,7 @@ function DashboardScreen() {
                 onMouseEnter={(e) => (e.target.style.transform = "scale(1.05)")}
                 onMouseLeave={(e) => (e.target.style.transform = "scale(1)")}
             >
-                Rokovnik
+                Termíny
             </a>
 
             {/* Logout + Budget */}
@@ -132,7 +156,7 @@ function DashboardScreen() {
                     onMouseEnter={(e) => (e.target.style.transform = "scale(1.05)")}
                     onMouseLeave={(e) => (e.target.style.transform = "scale(1)")}
                 >
-                    Odjavi se
+                    Odhlásiť sa
                 </button>
 
                 <a
@@ -174,7 +198,7 @@ function DashboardScreen() {
                 }}
             >
                 <div style={{ fontSize: "1.1rem", marginBottom: "5px", opacity: 0.95 }}>
-                    {currentTime.toLocaleDateString("sr-RS", {
+                    {currentTime.toLocaleDateString("sk-SK", {
                         weekday: "short",
                         year: "numeric",
                         month: "short",
@@ -183,7 +207,7 @@ function DashboardScreen() {
                 </div>
 
                 <div style={{ fontSize: "2rem", fontWeight: "bold" }}>
-                    {currentTime.toLocaleTimeString("sr-RS", {
+                    {currentTime.toLocaleTimeString("sk-SK", {
                         hour: "2-digit",
                         minute: "2-digit",
                         second: "2-digit"
@@ -209,7 +233,7 @@ function DashboardScreen() {
                     zIndex: 1000
                 }}
                 onClick={() => setShowChat(true)}
-                title="Otvoriti asistenta"
+                title="Otvoriť asistenta"
             >
                 🤖
             </button>
