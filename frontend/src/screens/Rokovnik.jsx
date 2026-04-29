@@ -1,178 +1,170 @@
-import React, { useState, useEffect, useCallback } from "react";
-"../styles/rokovnik-modern-v2.css";
+import React, { useState } from "react";
+import "../styles/rokovnik-modern.css";
 
 function Rokovnik() {
     const [tasks, setTasks] = useState([]);
-    const [newTask, setNewTask] = useState({ note: "", date: "", priority: "normal", category: "todo" });
-    const [filter, setFilter] = useState("all");
-    const [sortBy, setSortBy] = useState("date");
+    const [note, setNote] = useState("");
+    const [date, setDate] = useState("");
+    const [priority, setPriority] = useState("normal");
     const [showCompleted, setShowCompleted] = useState(true);
-    const [editingId, setEditingId] = useState(null);
-    const [editTask, setEditTask] = useState({});
-
-    // LocalStorage persistence
-    useEffect(() => {
-        const saved = localStorage.getItem("rokovnik-tasks");
-        if (saved) setTasks(JSON.parse(saved));
-    }, []);
-
-    useEffect(() => {
-        localStorage.setItem("rokovnik-tasks", JSON.stringify(tasks));
-    }, [tasks]);
 
     const addTask = (e) => {
         e.preventDefault();
-        if (!newTask.note.trim()) return;
+        if (!note.trim()) return;
 
-        setTasks(prev => [...prev, {
+        const newTask = {
             id: Date.now(),
-            ...newTask,
-            completed: false,
-            createdAt: new Date().toISOString()
-        }]);
-        setNewTask({ note: "", date: "", priority: "normal", category: "todo" });
+            note,
+            date,
+            priority,
+            status: "todo",
+            completed: false
+        };
+
+        setTasks(prev => [...prev, newTask]);
+        setNote("");
+        setDate("");
+        setPriority("normal");
     };
 
-    const deleteTask = useCallback((id) => {
+    const moveTask = (id, newStatus) => {
+        setTasks(prev =>
+            prev.map(t =>
+                t.id === id ? { ...t, status: newStatus } : t
+            )
+        );
+    };
+
+    const deleteTask = (id) => {
         setTasks(prev => prev.filter(t => t.id !== id));
-    }, []);
+    };
 
-    const toggleComplete = useCallback((id) => {
-        setTasks(prev => prev.map(t => t.id === id ? { ...t, completed: !t.completed } : t));
-    }, []);
+    const toggleComplete = (id) => {
+        setTasks(prev =>
+            prev.map(t =>
+                t.id === id ? { ...t, completed: !t.completed } : t
+            )
+        );
+    };
 
-    const startEdit = useCallback((task) => {
-        setEditingId(task.id);
-        setEditTask(task);
-    }, []);
+    const renderTask = (task) => (
+        <div
+            key={task.id}
+            className={`task-card ${task.priority} ${task.completed ? "completed" : ""}`}
+        >
+            <div className="task-content">
+                <h4>{task.note}</h4>
+                {task.date && <p className="task-date">📅 {task.date}</p>}
+                <p className="task-priority">🎯 {task.priority}</p>
+            </div>
 
-    const saveEdit = useCallback((e) => {
-        e.preventDefault();
-        setTasks(prev => prev.map(t => t.id === editingId ? editTask : t));
-        setEditingId(null);
-        setEditTask({});
-    }, [editingId, editTask]);
+            <div className="task-actions">
+                <button className="btn-icon" onClick={() => toggleComplete(task.id)}>
+                    ✔
+                </button>
 
-    const moveTask = useCallback((id, newCategory) => {
-        setTasks(prev => prev.map(t => t.id === id ? { ...t, category: newCategory } : t));
-    }, []);
+                <button className="btn-icon" onClick={() => moveTask(task.id, "todo")}>
+                    📥
+                </button>
 
-    // Filter & Sort
-    const filteredTasks = tasks
-        .filter(t => filter === "all" || t.priority === filter)
-        .filter(t => showCompleted || !t.completed)
-        .sort((a, b) => {
-            if (sortBy === "date") return new Date(b.date || b.createdAt) - new Date(a.date || a.createdAt);
-            if (sortBy === "priority") return ["high", "normal", "low"].indexOf(a.priority) - ["high", "normal", "low"].indexOf(b.priority);
-            return 0;
-        });
+                <button className="btn-icon" onClick={() => moveTask(task.id, "progress")}>
+                    🔄
+                </button>
 
-    const categories = ["todo", "progress", "done"];
+                <button className="btn-icon" onClick={() => moveTask(task.id, "done")}>
+                    ✅
+                </button>
+
+                <button className="btn-icon danger" onClick={() => deleteTask(task.id)}>
+                    🗑️
+                </button>
+            </div>
+        </div>
+    );
 
     return (
         <div className="rokovnik-app">
-            <header className="header">
+            <div className="header">
                 <h1>📘 Moderný Rokovník</h1>
+
                 <div className="stats">
-                    <span className="stat">📝 {tasks.filter(t => !t.completed).length}</span>
-                    <span className="stat completed">{tasks.filter(t => t.completed).length}</span>
+                    <div className="stat">Úlohy: {tasks.length}</div>
+                    <div className="stat completed">
+                        Hotové: {tasks.filter(t => t.completed).length}
+                    </div>
                 </div>
-            </header>
+            </div>
 
-            {/* Controls */}
             <div className="controls">
-                <select value={filter} onChange={(e) => setFilter(e.target.value)} className="control">
-                    <option value="all">Všetky priority</option>
-                    <option value="high">Vysoká</option>
-                    <option value="normal">Normálna</option>
-                    <option value="low">Nízka</option>
-                </select>
-
-                <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="control">
-                    <option value="date">Podľa dátumu</option>
-                    <option value="priority">Podľa priority</option>
-                </select>
-
                 <label className="checkbox-control">
-                    <input type="checkbox" checked={showCompleted} onChange={(e) => setShowCompleted(e.target.checked)} />
+                    <input
+                        type="checkbox"
+                        checked={showCompleted}
+                        onChange={() => setShowCompleted(!showCompleted)}
+                    />
                     Zobraziť dokončené
                 </label>
             </div>
 
-            {/* Add Task Form */}
-            <form onSubmit={addTask} className="add-form">
+            <form className="add-form" onSubmit={addTask}>
                 <input
                     type="text"
-                    placeholder="Nová poznámka..."
-                    value={newTask.note}
-                    onChange={(e) => setNewTask({ ...newTask, note: e.target.value })}
                     className="add-input"
+                    placeholder="Nová poznámka..."
+                    value={note}
+                    onChange={(e) => setNote(e.target.value)}
                 />
+
                 <input
                     type="date"
-                    value={newTask.date}
-                    onChange={(e) => setNewTask({ ...newTask, date: e.target.value })}
-                    className="add-input small"
+                    className="add-input"
+                    value={date}
+                    onChange={(e) => setDate(e.target.value)}
                 />
+
                 <select
-                    value={newTask.priority}
-                    onChange={(e) => setNewTask({ ...newTask, priority: e.target.value })}
                     className="add-select"
+                    value={priority}
+                    onChange={(e) => setPriority(e.target.value)}
                 >
-                    <option value="low">🟢 Nízka</option>
-                    <option value="normal">🟡 Normálna</option>
-                    <option value="high">🔴 Vysoká</option>
+                    <option value="low">Nízka</option>
+                    <option value="normal">Normálna</option>
+                    <option value="high">Vysoká</option>
                 </select>
-                <button type="submit" className="add-btn">➕ Pridať</button>
+
+                <button className="add-btn" type="submit">Pridať</button>
             </form>
 
-            {/* Kanban Board */}
             <div className="kanban">
-                {categories.map(category => (
-                    <div key={category} className={`kanban-column ${category}`}>
-                        <h3>{category === 'todo' ? '📋 To Do' : category === 'progress' ? '⚡ In Progress' : '✅ Done'}</h3>
-                        <div className="kanban-tasks">
-                            {filteredTasks
-                                .filter(t => t.category === category)
-                                .map(task => (
-                                    <div key={task.id} className={`task-card ${task.priority} ${task.completed ? 'completed' : ''}`}>
-                                        {editingId === task.id ? (
-                                            <form onSubmit={saveEdit} className="edit-form">
-                                                <textarea
-                                                    value={editTask.note}
-                                                    onChange={(e) => setEditTask({ ...editTask, note: e.target.value })}
-                                                    className="edit-textarea"
-                                                />
-                                                <div className="edit-actions">
-                                                    <button type="submit" className="btn-small primary">✓ Uložiť</button>
-                                                    <button type="button" onClick={() => setEditingId(null)} className="btn-small secondary">✕ Zrušiť</button>
-                                                </div>
-                                            </form>
-                                        ) : (
-                                            <>
-                                                <div className="task-content">
-                                                    <h4>{task.note}</h4>
-                                                    {task.date && <span className="task-date">📅 {task.date}</span>}
-                                                    <span className="task-priority">{task.priority === 'high' ? '🔴' : task.priority === 'normal' ? '🟡' : '🟢'}</span>
-                                                </div>
-                                                <div className="task-actions">
-                                                    <button onClick={() => startEdit(task)} className="btn-icon">✏️</button>
-                                                    <button onClick={() => toggleComplete(task.id)} className="btn-icon">
-                                                        {task.completed ? '↶' : '✓'}
-                                                    </button>
-                                                    <button onClick={() => deleteTask(task.id)} className="btn-icon danger">🗑️</button>
-                                                </div>
-                                            </>
-                                        )}
-                                    </div>
-                                ))}
-                        </div>
+                <div className="kanban-column todo">
+                    <h3>To Do</h3>
+                    <div className="kanban-tasks">
+                        {tasks
+                            .filter(t => t.status === "todo" && (showCompleted || !t.completed))
+                            .map(renderTask)}
                     </div>
-                ))}
+                </div>
+
+                <div className="kanban-column progress">
+                    <h3>In Progress</h3>
+                    <div className="kanban-tasks">
+                        {tasks
+                            .filter(t => t.status === "progress" && (showCompleted || !t.completed))
+                            .map(renderTask)}
+                    </div>
+                </div>
+
+                <div className="kanban-column done">
+                    <h3>Done</h3>
+                    <div className="kanban-tasks">
+                        {tasks
+                            .filter(t => t.status === "done" && (showCompleted || !t.completed))
+                            .map(renderTask)}
+                    </div>
+                </div>
             </div>
         </div>
     );
 }
 
 export default Rokovnik;
-
