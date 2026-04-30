@@ -292,3 +292,183 @@
         padding: 6px 4px;
     }
 }
+
+/* Account Summary - Prehlad uctu */
+.account-summary {
+    margin-bottom: 25px;
+    padding: 20px;
+    border-radius: 15px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(76, 175, 80, 0.3);
+}
+
+.account-summary .subtitle {
+    margin-top: 0;
+}
+
+.summary-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.stat-card {
+    padding: 15px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.08);
+    text-align: center;
+}
+
+.stat-card.balance {
+    background: rgba(76, 175, 80, 0.15);
+    border: 1px solid rgba(76, 175, 80, 0.3);
+}
+
+.stat-card.income {
+    background: rgba(76, 175, 80, 0.1);
+}
+
+.stat-card.expense {
+    background: rgba(255, 82, 82, 0.1);
+}
+
+.stat-label {
+    font-size: 12px;
+    opacity: 0.7;
+    margin-bottom: 5px;
+}
+
+.stat-value {
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.stat-value.positive {
+    color: #4caf50;
+}
+
+.stat-value.negative {
+    color: #ff5252;
+}
+
+/* Bar chart */
+.chart-container {
+    margin: 20px 0;
+    padding: 15px;
+    border-radius: 12px;
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.chart-title {
+    font-size: 14px;
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+.bar-chart {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    height: 120px;
+    align-items: flex-end;
+}
+
+.bar-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.bar {
+    width: 50px;
+    border-radius: 8px 8px 0 0;
+    min-height: 5px;
+    transition: height 0.3s ease;
+}
+
+.bar.income-bar {
+    background: linear-gradient(180deg, #4caf50, #2e7d32);
+}
+
+.bar.expense-bar {
+    background: linear-gradient(180deg, #ff5252, #c62828);
+}
+
+.bar-label {
+    font-size: 12px;
+    opacity: 0.8;
+}
+
+/* Last transactions */
+.last-transactions {
+    margin-top: 20px;
+    padding: 15px;
+    border-radius: 12px;
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.last-tx-title {
+    font-size: 14px;
+    margin-bottom: 12px;
+    font-weight: 500;
+}
+
+.last-tx-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.last-tx-item {
+    display: grid;
+    grid-template-columns: 80px 1fr 100px;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    font-size: 13px;
+}
+
+.tx-date {
+    opacity: 0.7;
+}
+
+.tx-desc {
+    opacity: 0.85;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tx-amount {
+    text-align: right;
+    font-weight: 500;
+}
+
+.tx-amount.positive {
+    color: #4caf50;
+}
+
+.tx-amount.negative {
+    color: #ff5252;
+}
+
+.no-transactions {
+    text-align: center;
+    padding: 15px;
+    opacity: 0.6;
+}
+
+/* Responsive for summary */
+@media (max-width: 768px) {
+    .summary-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .last-tx-item {
+        grid-template-columns: 70px 1fr 80px;
+        font-size: 12px;
+    }
+}
