@@ -2,66 +2,125 @@ import React, { useState } from "react";
 import "../styles/bank-modern.css";
 
 function BankScreen() {
-    const [bankInfo, setBankInfo] = useState({
+    // ⭐ 1) VIŠE BANKOVNIH RAČUNA
+    const [accounts, setAccounts] = useState([]);
+    const [selectedAccountId, setSelectedAccountId] = useState("");
+
+    const [newAccount, setNewAccount] = useState({
         bankName: "",
         iban: "",
         bic: "",
         accountNumber: ""
     });
 
+    // ⭐ 2) TRANSAKCIJE
     const [transactions, setTransactions] = useState([]);
+
     const [form, setForm] = useState({
         date: "",
         description: "",
         amount: "",
-        account: "",
         type: ""
     });
 
-    const handleBankChange = (e) => {
-        setBankInfo({ ...bankInfo, [e.target.name]: e.target.value });
+    // -----------------------------
+    // ⭐ HANDLERS ZA RAČUNE
+    // -----------------------------
+    const handleNewAccountChange = (e) => {
+        setNewAccount({ ...newAccount, [e.target.name]: e.target.value });
     };
 
-    const handleBankSave = () => {
-        console.log("Sačuvano:", bankInfo);
+    const handleAddAccount = () => {
+        if (!newAccount.bankName || !newAccount.iban) return;
+
+        const acc = {
+            id: crypto.randomUUID(),
+            ...newAccount
+        };
+
+        setAccounts((prev) => [...prev, acc]);
+        setSelectedAccountId(acc.id);
+
+        setNewAccount({
+            bankName: "",
+            iban: "",
+            bic: "",
+            accountNumber: ""
+        });
     };
 
+    // -----------------------------
+    // ⭐ HANDLERS ZA TRANSAKCIJE
+    // -----------------------------
     const handleChange = (e) => {
         setForm({ ...form, [e.target.name]: e.target.value });
     };
 
     const handleAdd = (e) => {
         e.preventDefault();
-        if (!form.date || !form.description || !form.amount || !form.account || !form.type) return;
+        if (!form.date || !form.description || !form.amount || !form.type || !selectedAccountId) return;
 
         setTransactions((prev) => [
             ...prev,
-            { ...form, id: Date.now(), amount: Number(form.amount) }
+            {
+                ...form,
+                id: Date.now(),
+                amount: Number(form.amount),
+                accountId: selectedAccountId
+            }
         ]);
 
-        setForm({ date: "", description: "", amount: "", account: "", type: "" });
+        setForm({
+            date: "",
+            description: "",
+            amount: "",
+            type: ""
+        });
     };
 
     const handleDelete = (id) => {
         setTransactions((prev) => prev.filter((t) => t.id !== id));
     };
 
+    // ⭐ FILTER TRANSAKCIJA ZA IZABRANI RAČUN
+    const filteredTransactions = transactions.filter(
+        (t) => t.accountId === selectedAccountId
+    );
+
     return (
         <div className="bank-bg">
             <div className="bank-card">
                 <h1 className="title">🏦 Bankovne transakcije</h1>
 
-                {/* BANK INFO BLOK */}
+                {/* ----------------------------- */}
+                {/* ⭐ BLOK: LISTA RAČUNA */}
+                {/* ----------------------------- */}
                 <div className="bank-info">
-                    <h2 className="subtitle">Podaci o banci</h2>
+                    <h2 className="subtitle">Bankovni računi</h2>
 
+                    {/* Dropdown za izbor računa */}
+                    <select
+                        className="input"
+                        value={selectedAccountId}
+                        onChange={(e) => setSelectedAccountId(e.target.value)}
+                        style={{ marginBottom: 16 }}
+                    >
+                        <option value="">-- Izaberite račun --</option>
+                        {accounts.map((acc) => (
+                            <option key={acc.id} value={acc.id}>
+                                {acc.bankName} ({acc.accountNumber})
+                            </option>
+                        ))}
+                    </select>
+
+                    {/* Forma za dodavanje računa */}
                     <div className="form-grid">
                         <input
                             type="text"
                             name="bankName"
                             placeholder="Naziv banke"
-                            value={bankInfo.bankName}
-                            onChange={handleBankChange}
+                            value={newAccount.bankName}
+                            onChange={handleNewAccountChange}
                             className="input"
                         />
 
@@ -69,8 +128,8 @@ function BankScreen() {
                             type="text"
                             name="iban"
                             placeholder="IBAN"
-                            value={bankInfo.iban}
-                            onChange={handleBankChange}
+                            value={newAccount.iban}
+                            onChange={handleNewAccountChange}
                             className="input"
                         />
 
@@ -78,8 +137,8 @@ function BankScreen() {
                             type="text"
                             name="bic"
                             placeholder="BIC / SWIFT"
-                            value={bankInfo.bic}
-                            onChange={handleBankChange}
+                            value={newAccount.bic}
+                            onChange={handleNewAccountChange}
                             className="input"
                         />
 
@@ -87,27 +146,28 @@ function BankScreen() {
                             type="text"
                             name="accountNumber"
                             placeholder="Broj računa"
-                            value={bankInfo.accountNumber}
-                            onChange={handleBankChange}
+                            value={newAccount.accountNumber}
+                            onChange={handleNewAccountChange}
                             className="input"
                         />
 
                         <button
                             className="btn-primary"
                             style={{ gridColumn: "span 4" }}
-                            onClick={handleBankSave}
+                            onClick={handleAddAccount}
                         >
-                            Sačuvaj banku
+                            ➕ Dodaj račun
                         </button>
                     </div>
                 </div>
 
-                {/* TRANSAKCIJE */}
+                {/* ----------------------------- */}
+                {/* ⭐ TRANSAKCIJE */}
+                {/* ----------------------------- */}
                 <form onSubmit={handleAdd} className="form-grid">
                     <input type="date" name="date" value={form.date} onChange={handleChange} className="input" />
                     <input type="text" name="description" placeholder="Opis" value={form.description} onChange={handleChange} className="input" />
                     <input type="number" name="amount" placeholder="Iznos" value={form.amount} onChange={handleChange} className="input" />
-                    <input type="text" name="account" placeholder="Račun" value={form.account} onChange={handleChange} className="input" />
 
                     <select name="type" value={form.type} onChange={handleChange} className="input">
                         <option value="">Tip</option>
@@ -118,25 +178,26 @@ function BankScreen() {
                     <button type="submit" className="btn-primary">Dodaj</button>
                 </form>
 
+                {/* ----------------------------- */}
+                {/* ⭐ TABELA TRANSAKCIJA */}
+                {/* ----------------------------- */}
                 <table className="table">
                     <thead>
                         <tr>
                             <th>Datum</th>
                             <th>Opis</th>
                             <th>Iznos</th>
-                            <th>Račun</th>
                             <th>Tip</th>
                             <th>Akcije</th>
                         </tr>
                     </thead>
 
                     <tbody>
-                        {transactions.map((t) => (
+                        {filteredTransactions.map((t) => (
                             <tr key={t.id}>
                                 <td>{t.date}</td>
                                 <td>{t.description}</td>
                                 <td>{t.amount}</td>
-                                <td>{t.account}</td>
                                 <td>{t.type}</td>
                                 <td>
                                     <button className="btn-danger" onClick={() => handleDelete(t.id)}>🗑️</button>
@@ -144,10 +205,10 @@ function BankScreen() {
                             </tr>
                         ))}
 
-                        {transactions.length === 0 && (
+                        {filteredTransactions.length === 0 && (
                             <tr>
                                 <td colSpan="6" className="empty">
-                                    Nema transakcija. Dodaj prvu iznad.
+                                    Nema transakcija za ovaj račun.
                                 </td>
                             </tr>
                         )}
