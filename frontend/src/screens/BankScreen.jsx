@@ -1,219 +1,544 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "../styles/bank-modern.css";
 
+const LS_ACCOUNTS_KEY = "bank_accounts";
+const LS_TRANSACTIONS_KEY = "bank_transactions";
+
+const CURRENCIES = ["EUR", "USD", "GBP", "CZK"];
+
 function BankScreen() {
-    // ⭐ 1) VIŠE BANKOVNIH RAČUNA
+    // Účty
     const [accounts, setAccounts] = useState([]);
     const [selectedAccountId, setSelectedAccountId] = useState("");
 
     const [newAccount, setNewAccount] = useState({
-        bankName: "",
+        name: "",
         iban: "",
         bic: "",
-        accountNumber: ""
+        accountNumber: "",
+        currency: "EUR",
     });
 
-    // ⭐ 2) TRANSAKCIJE
+    // Transakcie
     const [transactions, setTransactions] = useState([]);
 
-    const [form, setForm] = useState({
+    const [transactionForm, setTransactionForm] = useState({
         date: "",
-        description: "",
         amount: "",
-        type: ""
+        type: "",
+        description: "",
+        vs: "",
+        ss: "",
+        ks: "",
+        counterpartyIban: "",
     });
 
-    // -----------------------------
-    // ⭐ HANDLERS ZA RAČUNE
-    // -----------------------------
-    const handleNewAccountChange = (e) => {
+    // Filteri
+    const [filters, setFilters] = useState({
+        dateFrom: "",
+        dateTo: "",
+        type: "",
+        vs: "",
+        ss: "",
+        ks: "",
+        amountMin: "",
+        amountMax: "",
+        accountId: "",
+    });
+
+    // Ručný vstup toggle
+    const [manualMode, setManualMode] = useState(true);
+
+    // Load from LocalStorage
+    useEffect(() => {
+        const storedAccounts = JSON.parse(localStorage.getItem(LS_ACCOUNTS_KEY) || "[]");
+        const storedTransactions = JSON.parse(localStorage.getItem(LS_TRANSACTIONS_KEY) || "[]");
+
+        setAccounts(storedAccounts);
+        setTransactions(storedTransactions);
+
+        if (storedAccounts.length > 0) {
+            setSelectedAccountId(storedAccounts[0].id);
+            setFilters((prev) => ({ ...prev, accountId: storedAccounts[0].id }));
+        }
+    }, []);
+
+    // Save to LocalStorage
+    useEffect(() => {
+        localStorage.setItem(LS_ACCOUNTS_KEY, JSON.stringify(accounts));
+    }, [accounts]);
+
+    useEffect(() => {
+        localStorage.setItem(LS_TRANSACTIONS_KEY, JSON.stringify(transactions));
+    }, [transactions]);
+
+    // Účty handlers
+    const handleAccountChange = (e) => {
         setNewAccount({ ...newAccount, [e.target.name]: e.target.value });
     };
 
-    const handleAddAccount = () => {
-        if (!newAccount.bankName || !newAccount.iban) return;
+    const handleAddAccount = (e) => {
+        e.preventDefault();
+        if (!newAccount.name || !newAccount.iban) return;
 
         const acc = {
             id: crypto.randomUUID(),
-            ...newAccount
+            ...newAccount,
+            createdAt: new Date().toISOString(),
         };
 
-        setAccounts((prev) => [...prev, acc]);
-        setSelectedAccountId(acc.id);
+        const updated = [...accounts, acc];
+        setAccounts(updated);
+
+        if (!selectedAccountId) {
+            setSelectedAccountId(acc.id);
+            setFilters((prev) => ({ ...prev, accountId: acc.id }));
+        }
 
         setNewAccount({
-            bankName: "",
+            name: "",
             iban: "",
             bic: "",
-            accountNumber: ""
+            accountNumber: "",
+            currency: "EUR",
         });
     };
 
-    // -----------------------------
-    // ⭐ HANDLERS ZA TRANSAKCIJE
-    // -----------------------------
-    const handleChange = (e) => {
-        setForm({ ...form, [e.target.name]: e.target.value });
+    // Transakcie handlers
+    const handleTransactionChange = (e) => {
+        setTransactionForm({ ...transactionForm, [e.target.name]: e.target.value });
     };
 
-    const handleAdd = (e) => {
+    const handleAddTransaction = (e) => {
         e.preventDefault();
-        if (!form.date || !form.description || !form.amount || !form.type || !selectedAccountId) return;
+        if (
+            !selectedAccountId ||
+            !transactionForm.date ||
+            !transactionForm.amount ||
+            !transactionForm.type
+        ) {
+            return;
+        }
 
-        setTransactions((prev) => [
-            ...prev,
-            {
-                ...form,
-                id: Date.now(),
-                amount: Number(form.amount),
-                accountId: selectedAccountId
-            }
-        ]);
+        const tx = {
+            id: crypto.randomUUID(),
+            accountId: selectedAccountId,
+            date: transactionForm.date,
+            amount: Number(transactionForm.amount),
+            type: transactionForm.type, // PRIJEM / VYDAVOK
+            description: transactionForm.description,
+            vs: transactionForm.vs,
+            ss: transactionForm.ss,
+            ks: transactionForm.ks,
+            counterpartyIban: transactionForm.counterpartyIban,
+            createdAt: new Date().toISOString(),
+        };
 
-        setForm({
+        setTransactions((prev) => [...prev, tx]);
+
+        setTransactionForm({
             date: "",
-            description: "",
             amount: "",
-            type: ""
+            type: "",
+            description: "",
+            vs: "",
+            ss: "",
+            ks: "",
+            counterpartyIban: "",
         });
     };
 
-    const handleDelete = (id) => {
+    const handleDeleteTransaction = (id) => {
         setTransactions((prev) => prev.filter((t) => t.id !== id));
     };
 
-    // ⭐ FILTER TRANSAKCIJA ZA IZABRANI RAČUN
-    const filteredTransactions = transactions.filter(
+    // Filter handlers
+    const handleFilterChange = (e) => {
+        setFilters({ ...filters, [e.target.name]: e.target.value });
+    };
+
+    const handleAccountSelect = (e) => {
+        const id = e.target.value;
+        setSelectedAccountId(id);
+        setFilters((prev) => ({ ...prev, accountId: id }));
+    };
+
+    // Filter logic
+    const filteredTransactions = transactions.filter((t) => {
+        if (filters.accountId && t.accountId !== filters.accountId) return false;
+
+        if (filters.type && t.type !== filters.type) return false;
+
+        if (filters.vs && t.vs !== filters.vs) return false;
+        if (filters.ss && t.ss !== filters.ss) return false;
+        if (filters.ks && t.ks !== filters.ks) return false;
+
+        if (filters.dateFrom && t.date < filters.dateFrom) return false;
+        if (filters.dateTo && t.date > filters.dateTo) return false;
+
+        if (filters.amountMin && t.amount < Number(filters.amountMin)) return false;
+        if (filters.amountMax && t.amount > Number(filters.amountMax)) return false;
+
+        return true;
+    });
+
+    const selectedAccount = accounts.find((a) => a.id === selectedAccountId);
+
+    const accountTransactions = transactions.filter(
         (t) => t.accountId === selectedAccountId
     );
+
+    const accountBalance = accountTransactions.reduce((sum, t) => {
+        return t.type === "PRIJEM" ? sum + t.amount : sum - t.amount;
+    }, 0);
+
+    const lastTransactions = accountTransactions
+        .slice()
+        .sort((a, b) => (a.date < b.date ? 1 : -1))
+        .slice(0, 5);
 
     return (
         <div className="bank-bg">
             <div className="bank-card">
-                <h1 className="title">🏦 Bankovne transakcije</h1>
+                <button onClick={() => window.history.back()} className="btn-back">
+                    ← Späť
+                </button>
 
-                {/* ----------------------------- */}
-                {/* ⭐ BLOK: LISTA RAČUNA */}
-                {/* ----------------------------- */}
-                <div className="bank-info">
-                    <h2 className="subtitle">Bankovni računi</h2>
+                <h1 className="title">🏦 Banka</h1>
 
-                    {/* Dropdown za izbor računa */}
-                    <select
-                        className="input"
-                        value={selectedAccountId}
-                        onChange={(e) => setSelectedAccountId(e.target.value)}
-                        style={{ marginBottom: 16 }}
-                    >
-                        <option value="">-- Izaberite račun --</option>
-                        {accounts.map((acc) => (
-                            <option key={acc.id} value={acc.id}>
-                                {acc.bankName} ({acc.accountNumber})
-                            </option>
-                        ))}
-                    </select>
+                <div className="bank-layout">
+                    {/* 1) ÚČTY */}
+                    <section className="bank-section">
+                        <h2 className="subtitle">Účty</h2>
 
-                    {/* Forma za dodavanje računa */}
-                    <div className="form-grid">
-                        <input
-                            type="text"
-                            name="bankName"
-                            placeholder="Naziv banke"
-                            value={newAccount.bankName}
-                            onChange={handleNewAccountChange}
-                            className="input"
-                        />
+                        <div className="block">
+                            <label className="label">Vyberte účet</label>
+                            <select
+                                className="input"
+                                value={selectedAccountId}
+                                onChange={handleAccountSelect}
+                            >
+                                <option value="">-- Vyberte účet --</option>
+                                {accounts.map((acc) => (
+                                    <option key={acc.id} value={acc.id}>
+                                        {acc.name} ({acc.currency})
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
 
-                        <input
-                            type="text"
-                            name="iban"
-                            placeholder="IBAN"
-                            value={newAccount.iban}
-                            onChange={handleNewAccountChange}
-                            className="input"
-                        />
+                        <h3 className="subtitle small">Pridať účet</h3>
+                        <form onSubmit={handleAddAccount} className="form-grid">
+                            <input
+                                type="text"
+                                name="name"
+                                placeholder="Názov účtu (Firemný, Súkromný…)"
+                                value={newAccount.name}
+                                onChange={handleAccountChange}
+                                className="input"
+                            />
+                            <input
+                                type="text"
+                                name="iban"
+                                placeholder="IBAN"
+                                value={newAccount.iban}
+                                onChange={handleAccountChange}
+                                className="input"
+                            />
+                            <input
+                                type="text"
+                                name="bic"
+                                placeholder="BIC"
+                                value={newAccount.bic}
+                                onChange={handleAccountChange}
+                                className="input"
+                            />
+                            <input
+                                type="text"
+                                name="accountNumber"
+                                placeholder="Číslo účtu"
+                                value={newAccount.accountNumber}
+                                onChange={handleAccountChange}
+                                className="input"
+                            />
+                            <select
+                                name="currency"
+                                value={newAccount.currency}
+                                onChange={handleAccountChange}
+                                className="input"
+                            >
+                                {CURRENCIES.map((c) => (
+                                    <option key={c} value={c}>
+                                        {c}
+                                    </option>
+                                ))}
+                            </select>
 
-                        <input
-                            type="text"
-                            name="bic"
-                            placeholder="BIC / SWIFT"
-                            value={newAccount.bic}
-                            onChange={handleNewAccountChange}
-                            className="input"
-                        />
+                            <button
+                                type="submit"
+                                className="btn-primary"
+                                style={{ gridColumn: "1 / -1" }}
+                            >
+                                Pridať účet
+                            </button>
+                        </form>
+                    </section>
 
-                        <input
-                            type="text"
-                            name="accountNumber"
-                            placeholder="Broj računa"
-                            value={newAccount.accountNumber}
-                            onChange={handleNewAccountChange}
-                            className="input"
-                        />
+                    {/* 2) TRANSAKCIE */}
+                    <section className="bank-section">
+                        <h2 className="subtitle">Transakcie</h2>
 
-                        <button
-                            className="btn-primary"
-                            style={{ gridColumn: "span 4" }}
-                            onClick={handleAddAccount}
-                        >
-                            ➕ Dodaj račun
-                        </button>
-                    </div>
-                </div>
+                        <div className="block">
+                            <button
+                                type="button"
+                                className="btn-secondary"
+                                onClick={() => setManualMode((m) => !m)}
+                            >
+                                {manualMode ? "Prepni na asistenta (placeholder)" : "Ručný vstup"}
+                            </button>
+                        </div>
 
-                {/* ----------------------------- */}
-                {/* ⭐ TRANSAKCIJE */}
-                {/* ----------------------------- */}
-                <form onSubmit={handleAdd} className="form-grid">
-                    <input type="date" name="date" value={form.date} onChange={handleChange} className="input" />
-                    <input type="text" name="description" placeholder="Opis" value={form.description} onChange={handleChange} className="input" />
-                    <input type="number" name="amount" placeholder="Iznos" value={form.amount} onChange={handleChange} className="input" />
+                        {manualMode && (
+                            <form onSubmit={handleAddTransaction} className="form-grid">
+                                <input
+                                    type="date"
+                                    name="date"
+                                    value={transactionForm.date}
+                                    onChange={handleTransactionChange}
+                                    className="input"
+                                />
+                                <input
+                                    type="number"
+                                    name="amount"
+                                    placeholder="Suma"
+                                    value={transactionForm.amount}
+                                    onChange={handleTransactionChange}
+                                    className="input"
+                                />
+                                <select
+                                    name="type"
+                                    value={transactionForm.type}
+                                    onChange={handleTransactionChange}
+                                    className="input"
+                                >
+                                    <option value="">Typ</option>
+                                    <option value="PRIJEM">Príjem</option>
+                                    <option value="VYDAVOK">Výdavok</option>
+                                </select>
+                                <input
+                                    type="text"
+                                    name="description"
+                                    placeholder="Popis / poznámka"
+                                    value={transactionForm.description}
+                                    onChange={handleTransactionChange}
+                                    className="input"
+                                />
+                                <input
+                                    type="text"
+                                    name="vs"
+                                    placeholder="Variabilný symbol (VS)"
+                                    value={transactionForm.vs}
+                                    onChange={handleTransactionChange}
+                                    className="input"
+                                />
+                                <input
+                                    type="text"
+                                    name="ss"
+                                    placeholder="Špecifický symbol (SS)"
+                                    value={transactionForm.ss}
+                                    onChange={handleTransactionChange}
+                                    className="input"
+                                />
+                                <input
+                                    type="text"
+                                    name="ks"
+                                    placeholder="Konštantný symbol (KS)"
+                                    value={transactionForm.ks}
+                                    onChange={handleTransactionChange}
+                                    className="input"
+                                />
+                                <input
+                                    type="text"
+                                    name="counterpartyIban"
+                                    placeholder="Protiúčet (IBAN dodávateľa/odberateľa)"
+                                    value={transactionForm.counterpartyIban}
+                                    onChange={handleTransactionChange}
+                                    className="input"
+                                />
 
-                    <select name="type" value={form.type} onChange={handleChange} className="input">
-                        <option value="">Tip</option>
-                        <option value="priliv">Priliv</option>
-                        <option value="odliv">Odliv</option>
-                    </select>
-
-                    <button type="submit" className="btn-primary">Dodaj</button>
-                </form>
-
-                {/* ----------------------------- */}
-                {/* ⭐ TABELA TRANSAKCIJA */}
-                {/* ----------------------------- */}
-                <table className="table">
-                    <thead>
-                        <tr>
-                            <th>Datum</th>
-                            <th>Opis</th>
-                            <th>Iznos</th>
-                            <th>Tip</th>
-                            <th>Akcije</th>
-                        </tr>
-                    </thead>
-
-                    <tbody>
-                        {filteredTransactions.map((t) => (
-                            <tr key={t.id}>
-                                <td>{t.date}</td>
-                                <td>{t.description}</td>
-                                <td>{t.amount}</td>
-                                <td>{t.type}</td>
-                                <td>
-                                    <button className="btn-danger" onClick={() => handleDelete(t.id)}>🗑️</button>
-                                </td>
-                            </tr>
-                        ))}
-
-                        {filteredTransactions.length === 0 && (
-                            <tr>
-                                <td colSpan="6" className="empty">
-                                    Nema transakcija za ovaj račun.
-                                </td>
-                            </tr>
+                                <button
+                                    type="submit"
+                                    className="btn-primary"
+                                    style={{ gridColumn: "1 / -1" }}
+                                >
+                                    Pridať transakciu
+                                </button>
+                            </form>
                         )}
-                    </tbody>
-                </table>
+
+                        <h3 className="subtitle small" style={{ marginTop: 16 }}>
+                            Filteri
+                        </h3>
+                        <div className="form-grid">
+                            <input
+                                type="date"
+                                name="dateFrom"
+                                value={filters.dateFrom}
+                                onChange={handleFilterChange}
+                                className="input"
+                            />
+                            <input
+                                type="date"
+                                name="dateTo"
+                                value={filters.dateTo}
+                                onChange={handleFilterChange}
+                                className="input"
+                            />
+                            <select
+                                name="type"
+                                value={filters.type}
+                                onChange={handleFilterChange}
+                                className="input"
+                            >
+                                <option value="">Typ</option>
+                                <option value="PRIJEM">Príjem</option>
+                                <option value="VYDAVOK">Výdavok</option>
+                            </select>
+                            <input
+                                type="text"
+                                name="vs"
+                                placeholder="VS"
+                                value={filters.vs}
+                                onChange={handleFilterChange}
+                                className="input"
+                            />
+                            <input
+                                type="text"
+                                name="ss"
+                                placeholder="SS"
+                                value={filters.ss}
+                                onChange={handleFilterChange}
+                                className="input"
+                            />
+                            <input
+                                type="text"
+                                name="ks"
+                                placeholder="KS"
+                                value={filters.ks}
+                                onChange={handleFilterChange}
+                                className="input"
+                            />
+                            <input
+                                type="number"
+                                name="amountMin"
+                                placeholder="Min suma"
+                                value={filters.amountMin}
+                                onChange={handleFilterChange}
+                                className="input"
+                            />
+                            <input
+                                type="number"
+                                name="amountMax"
+                                placeholder="Max suma"
+                                value={filters.amountMax}
+                                onChange={handleFilterChange}
+                                className="input"
+                            />
+                        </div>
+
+                        <table className="table">
+                            <thead>
+                                <tr>
+                                    <th>Dátum</th>
+                                    <th>Suma</th>
+                                    <th>Typ</th>
+                                    <th>Popis</th>
+                                    <th>VS</th>
+                                    <th>SS</th>
+                                    <th>KS</th>
+                                    <th>Protiúčet</th>
+                                    <th>Akcie</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {filteredTransactions.map((t) => (
+                                    <tr key={t.id}>
+                                        <td>{t.date}</td>
+                                        <td>{t.amount}</td>
+                                        <td>{t.type}</td>
+                                        <td>{t.description}</td>
+                                        <td>{t.vs}</td>
+                                        <td>{t.ss}</td>
+                                        <td>{t.ks}</td>
+                                        <td>{t.counterpartyIban}</td>
+                                        <td>
+                                            <button
+                                                className="btn-danger"
+                                                onClick={() => handleDeleteTransaction(t.id)}
+                                            >
+                                                🗑️
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                                {filteredTransactions.length === 0 && (
+                                    <tr>
+                                        <td colSpan="9" className="empty">
+                                            Žiadne transakcie podľa zvolených filtrov.
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </section>
+
+                    {/* 3) DETAIL ÚČTU */}
+                    <section className="bank-section">
+                        <h2 className="subtitle">Detail účtu</h2>
+
+                        {selectedAccount ? (
+                            <>
+                                <p>
+                                    <strong>Názov:</strong> {selectedAccount.name}
+                                </p>
+                                <p>
+                                    <strong>IBAN:</strong> {selectedAccount.iban}
+                                </p>
+                                <p>
+                                    <strong>Mena:</strong> {selectedAccount.currency}
+                                </p>
+                                <p>
+                                    <strong>Aktuálny zostatok:</strong>{" "}
+                                    {accountBalance.toFixed(2)} {selectedAccount.currency}
+                                </p>
+                                <p>
+                                    <strong>Počet transakcií:</strong> {accountTransactions.length}
+                                </p>
+
+                                <h3 className="subtitle small" style={{ marginTop: 16 }}>
+                                    Posledné transakcie
+                                </h3>
+                                <ul className="list">
+                                    {lastTransactions.map((t) => (
+                                        <li key={t.id}>
+                                            {t.date} — {t.type} — {t.amount}{" "}
+                                            {selectedAccount.currency} — {t.description}
+                                        </li>
+                                    ))}
+                                    {lastTransactions.length === 0 && (
+                                        <li>Žiadne transakcie.</li>
+                                    )}
+                                </ul>
+
+                                <div className="graph-placeholder">
+                                    Graf príde neskôr 🙂
+                                </div>
+                            </>
+                        ) : (
+                            <p>Vyberte účet pre detail.</p>
+                        )}
+                    </section>
+                </div>
             </div>
         </div>
     );
