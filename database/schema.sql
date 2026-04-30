@@ -28,15 +28,35 @@ CREATE TABLE output_invoices (
     status VARCHAR(32)
 );
 
--- Tabela za banku
+-- Tabela pre bankové účty
+CREATE TABLE bank_accounts (
+    id SERIAL PRIMARY KEY,
+    tenant_id INTEGER NOT NULL,
+    name VARCHAR(128) NOT NULL,
+    iban VARCHAR(34),
+    bic VARCHAR(11),
+    account_number VARCHAR(64),
+    currency VARCHAR(3) DEFAULT 'EUR',
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Tabela pre bankové transakcie (FULL forma pre SK bankovníctvo)
 CREATE TABLE bank_transactions (
     id SERIAL PRIMARY KEY,
-    company_id INTEGER,
-    transaction_date DATE,
-    amount NUMERIC,
-    description VARCHAR(256),
+    tenant_id INTEGER NOT NULL,
+    account_id INTEGER REFERENCES bank_accounts(id),
+    transaction_date DATE NOT NULL,
+    amount NUMERIC(15,2) NOT NULL,
+    type VARCHAR(10) NOT NULL CHECK (type IN ('priliv', 'odliv', 'prijem', 'vydavok')),
+    description VARCHAR(512),
+    variable_symbol VARCHAR(20),
+    specific_symbol VARCHAR(20),
+    constant_symbol VARCHAR(10),
+    counter_iban VARCHAR(34),
     category VARCHAR(64),
-    invoice_id INTEGER REFERENCES input_invoices(id)
+    invoice_id INTEGER REFERENCES input_invoices(id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Tabela za PDV periode

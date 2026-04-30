@@ -107,3 +107,188 @@
     opacity: 0.6;
     padding: 20px;
 }
+
+/* Account Selector */
+.account-selector {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    margin-bottom: 25px;
+    padding: 15px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.account-selector .label {
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.account-selector .input {
+    flex: 1;
+    min-width: 200px;
+}
+
+.btn-secondary {
+    padding: 10px 18px;
+    border: none;
+    border-radius: 8px;
+    background: #6c5ce7;
+    color: white;
+    font-weight: 500;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.btn-secondary:hover {
+    background: #5b4cdb;
+}
+
+/* Account Form */
+.account-form {
+    margin-bottom: 25px;
+    padding: 20px;
+    border-radius: 15px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(108, 92, 231, 0.4);
+}
+
+.form-grid-full {
+    display: grid;
+    gap: 15px;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.form-group.full-width {
+    grid-column: span 3;
+}
+
+.label {
+    font-size: 13px;
+    font-weight: 500;
+    opacity: 0.85;
+}
+
+/* Transaction Form */
+.tx-form {
+    margin-bottom: 30px;
+    padding: 20px;
+    border-radius: 15px;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.tx-form .form-grid-full {
+    background: transparent;
+}
+
+.tx-form .input {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Amount colors */
+.amount-positive {
+    color: #4caf50;
+    font-weight: 600;
+}
+
+.amount-negative {
+    color: #ff5252;
+    font-weight: 600;
+}
+
+/* Type badge */
+.type-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.type-badge.priliv,
+.type-badge.prijem {
+    background: rgba(76, 175, 80, 0.2);
+    color: #4caf50;
+}
+
+.type-badge.odliv,
+.type-badge.vydavok {
+    background: rgba(255, 82, 82, 0.2);
+    color: #ff5252;
+}
+
+/* Loading */
+.loading {
+    text-align: center;
+    padding: 30px;
+    opacity: 0.7;
+}
+
+/* Transactions list */
+.transactions-list {
+    margin-top: 20px;
+}
+
+/* Table responsive */
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    font-size: 14px;
+}
+
+.table th,
+.table td {
+    padding: 10px 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    text-align: left;
+}
+
+.table th {
+    font-weight: 600;
+    background: rgba(255, 255, 255, 0.05);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.table tr:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+
+    .form-group.full-width {
+        grid-column: span 1;
+    }
+
+    .account-selector {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .table {
+        font-size: 12px;
+    }
+
+    .table th,
+    .table td {
+        padding: 6px 4px;
+    }
+}

@@ -34,6 +34,8 @@ import matchingRouter from './routes/matching.js';
 import bankRoutes from './routes/bankRoutes.js';
 import tinkCallback from './routes/tinkCallback.js';
 import bankTransactions from './routes/bankTransactions.js';
+import bankAccountsRouter from './routes/bankAccounts.js';
+import bankTransactionsFull from './routes/bankTransactionsFull.js';
 import initializeDatabase from './dbInit.js';
 
 if (process.env.NODE_ENV !== "development") {
@@ -94,6 +96,10 @@ app.use('/api/auth', authRouter);
 app.use('/api/bank', bankRoutes);
 app.use('/api/tink', tinkCallback);
 app.use('/api/bank', bankTransactions);
+
+// BANK ACCOUNTS APIs (nové)
+app.use('/api/bank-accounts', bankAccountsRouter);
+app.use('/api/bank/transactions', bankTransactionsFull);
 
 // LOGIN TEST
 app.get('/login', (req, res) => {
