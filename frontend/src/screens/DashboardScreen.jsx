@@ -80,29 +80,29 @@ function DashboardScreen() {
                 Banka
             </a>
 
-            {/* Rokovnik button */}
-            <a
-                href="/deadlines"
-                style={{
-                    position: "fixed",
-                    bottom: "30px",
-                    left: "30px",
-                    padding: "12px 24px",
-                    background: "linear-gradient(135deg, #FF9800, #F57C00)",
-                    color: "white",
-                    textDecoration: "none",
-                    borderRadius: "12px",
-                    fontWeight: "bold",
-                    fontSize: "1rem",
-                    boxShadow: "0 4px 14px rgba(255,152,0,0.4)",
-                    transition: "0.3s",
-                    zIndex: 999
-                }}
-                onMouseEnter={(e) => (e.target.style.transform = "scale(1.05)")}
-                onMouseLeave={(e) => (e.target.style.transform = "scale(1)")}
-            >
-                Rokovnik
-            </a>
+             {/* Úlohy a termíny button */}
+             <a
+                 href="/deadlines"
+                 style={{
+                     position: "fixed",
+                     bottom: "30px",
+                     left: "30px",
+                     padding: "12px 24px",
+                     background: "linear-gradient(135deg, #FF9800, #F57C00)",
+                     color: "white",
+                     textDecoration: "none",
+                     borderRadius: "12px",
+                     fontWeight: "bold",
+                     fontSize: "1rem",
+                     boxShadow: "0 4px 14px rgba(255,152,0,0.4)",
+                     transition: "0.3s",
+                     zIndex: 999
+                 }}
+                 onMouseEnter={(e) => (e.target.style.transform = "scale(1.05)")}
+                 onMouseLeave={(e) => (e.target.style.transform = "scale(1)")}
+             >
+                 Úlohy a termíny
+             </a>
 
             {/* Logout + Budget */}
             <div
