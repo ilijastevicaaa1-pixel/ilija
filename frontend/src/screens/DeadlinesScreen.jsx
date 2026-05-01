@@ -73,175 +73,177 @@ export default function DeadlineScreen() {
     return true;
   });
 
-  return (
-    <div className="deadlines-screen">
-      <div className="deadlines-header">
-        <h1>Úlohy a termíny</h1>
-        <p className="deadlines-subtitle">
-          Jednoduchý prehľad úloh, termínov a priorít.
-        </p>
-      </div>
+   return (
+     <div className="rokovnik-background">
+       <div className="deadlines-screen">
+         <div className="deadlines-header">
+           <h1>Úlohy a termíny</h1>
+           <p className="deadlines-subtitle">
+             Jednoduchý prehľad úloh, termínov a priorít.
+           </p>
+         </div>
 
-      {/* FORM */}
-      <div className="deadlines-card">
-        <h2>Pridať úlohu</h2>
-        <form className="deadlines-form" onSubmit={handleAddTask}>
-          <div className="form-row">
-            <div className="form-field">
-              <label>Názov úlohy</label>
-              <input
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Např. DPH za apríl, Faktúry, Kontrola banky..."
-              />
-            </div>
-            <div className="form-field">
-              <label>Termín</label>
-              <input
-                type="date"
-                value={dueDate}
-                onChange={(e) => setDueDate(e.target.value)}
-              />
-            </div>
-          </div>
+         {/* FORM */}
+         <div className="deadlines-card">
+           <h2>Pridať úlohu</h2>
+           <form className="deadlines-form" onSubmit={handleAddTask}>
+             <div className="form-row">
+               <div className="form-field">
+                 <label>Názov úlohy</label>
+                 <input
+                   type="text"
+                   value={title}
+                   onChange={(e) => setTitle(e.target.value)}
+                   placeholder="Např. DPH za apríl, Faktúry, Kontrola banky..."
+                 />
+               </div>
+               <div className="form-field">
+                 <label>Termín</label>
+                 <input
+                   type="date"
+                   value={dueDate}
+                   onChange={(e) => setDueDate(e.target.value)}
+                 />
+               </div>
+             </div>
 
-          <div className="form-row">
-            <div className="form-field">
-              <label>Status</label>
-              <select
-                value={status}
-                onChange={(e) => setStatus(e.target.value)}
-              >
-                {STATUS_OPTIONS.map((s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="form-field">
-              <label>Priorita</label>
-              <select
-                value={priority}
-                onChange={(e) => setPriority(e.target.value)}
-              >
-                {PRIORITY_OPTIONS.map((p) => (
-                  <option key={p} value={p}>
-                    {p}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
+             <div className="form-row">
+               <div className="form-field">
+                 <label>Status</label>
+                 <select
+                   value={status}
+                   onChange={(e) => setStatus(e.target.value)}
+                 >
+                   {STATUS_OPTIONS.map((s) => (
+                     <option key={s} value={s}>
+                       {s}
+                     </option>
+                   ))}
+                 </select>
+               </div>
+               <div className="form-field">
+                 <label>Priorita</label>
+                 <select
+                   value={priority}
+                   onChange={(e) => setPriority(e.target.value)}
+                 >
+                   {PRIORITY_OPTIONS.map((p) => (
+                     <option key={p} value={p}>
+                       {p}
+                     </option>
+                   ))}
+                 </select>
+               </div>
+             </div>
 
-          <div className="form-field">
-            <label>Poznámka</label>
-            <textarea
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              rows={2}
-              placeholder="Doplňujúce info, klient, typ dane, podklady..."
-            />
-          </div>
+             <div className="form-field">
+               <label>Poznámka</label>
+               <textarea
+                 value={note}
+                 onChange={(e) => setNote(e.target.value)}
+                 rows={2}
+                 placeholder="Doplňujúce info, klient, typ dane, podklady..."
+               />
+             </div>
 
-          <div className="form-actions">
-            <button type="submit" className="btn-primary">
-              Pridať úlohu
-            </button>
-          </div>
-        </form>
-      </div>
+             <div className="form-actions">
+               <button type="submit" className="btn-primary">
+                 Pridať úlohu
+               </button>
+             </div>
+           </form>
+         </div>
 
-      {/* FILTERS */}
-      <div className="deadlines-card">
-        <h2>Filter</h2>
-        <div className="deadlines-filters">
-          <div className="form-field">
-            <label>Status</label>
-            <select
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-            >
-              <option value="">Všetko</option>
-              {STATUS_OPTIONS.map((s) => (
-                <option key={s} value={s}>
-                  {s}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="form-field">
-            <label>Termín od</label>
-            <input
-              type="date"
-              value={filterDateFrom}
-              onChange={(e) => setFilterDateFrom(e.target.value)}
-            />
-          </div>
-          <div className="form-field">
-            <label>Termín do</label>
-            <input
-              type="date"
-              value={filterDateTo}
-              onChange={(e) => setFilterDateTo(e.target.value)}
-            />
-          </div>
-        </div>
-      </div>
+         {/* FILTERS */}
+         <div className="deadlines-card">
+           <h2>Filter</h2>
+           <div className="deadlines-filters">
+             <div className="form-field">
+               <label>Status</label>
+               <select
+                 value={filterStatus}
+                 onChange={(e) => setFilterStatus(e.target.value)}
+               >
+                 <option value="">Všetko</option>
+                 {STATUS_OPTIONS.map((s) => (
+                   <option key={s} value={s}>
+                     {s}
+                   </option>
+                 ))}
+               </select>
+             </div>
+             <div className="form-field">
+               <label>Termín od</label>
+               <input
+                 type="date"
+                 value={filterDateFrom}
+                 onChange={(e) => setFilterDateFrom(e.target.value)}
+               />
+             </div>
+             <div className="form-field">
+               <label>Termín do</label>
+               <input
+                 type="date"
+                 value={filterDateTo}
+                 onChange={(e) => setFilterDateTo(e.target.value)}
+               />
+             </div>
+           </div>
+         </div>
 
-      {/* LIST */}
-      <div className="deadlines-card">
-        <h2>Zoznam úloh</h2>
-        {filteredTasks.length === 0 ? (
-          <p className="deadlines-empty">Zatiaľ nemáte žiadne úlohy.</p>
-        ) : (
-          <table className="deadlines-table">
-            <thead>
-              <tr>
-                <th>Termín</th>
-                <th>Názov</th>
-                <th>Status</th>
-                <th>Priorita</th>
-                <th>Poznámka</th>
-                <th>Akcie</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredTasks.map((t) => (
-                <tr key={t.id}>
-                  <td>{t.dueDate}</td>
-                  <td>{t.title}</td>
-                  <td>
-                    <select
-                      value={t.status}
-                      onChange={(e) =>
-                        handleStatusChange(t.id, e.target.value)
-                      }
-                    >
-                      {STATUS_OPTIONS.map((s) => (
-                        <option key={s} value={s}>
-                          {s}
-                        </option>
-                      ))}
-                    </select>
-                  </td>
-                  <td>{t.priority}</td>
-                  <td>{t.note}</td>
-                  <td>
-                    <button
-                      className="btn-danger"
-                      onClick={() => handleDelete(t.id)}
-                    >
-                      🗑
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
-    </div>
-  );
+         {/* LIST */}
+         <div className="deadlines-card">
+           <h2>Zoznam úloh</h2>
+           {filteredTasks.length === 0 ? (
+             <p className="deadlines-empty">Zatiaľ nemáte žiadne úlohy.</p>
+           ) : (
+             <table className="deadlines-table">
+               <thead>
+                 <tr>
+                   <th>Termín</th>
+                   <th>Názov</th>
+                   <th>Status</th>
+                   <th>Priorita</th>
+                   <th>Poznámka</th>
+                   <th>Akcie</th>
+                 </tr>
+               </thead>
+               <tbody>
+                 {filteredTasks.map((t) => (
+                   <tr key={t.id}>
+                     <td>{t.dueDate}</td>
+                     <td>{t.title}</td>
+                     <td>
+                       <select
+                         value={t.status}
+                         onChange={(e) =>
+                           handleStatusChange(t.id, e.target.value)
+                         }
+                       >
+                         {STATUS_OPTIONS.map((s) => (
+                           <option key={s} value={s}>
+                             {s}
+                           </option>
+                         ))}
+                       </select>
+                     </td>
+                     <td>{t.priority}</td>
+                     <td>{t.note}</td>
+                     <td>
+                       <button
+                         className="btn-danger"
+                         onClick={() => handleDelete(t.id)}
+                       >
+                         🗑
+                       </button>
+                     </td>
+                   </tr>
+                 ))}
+               </tbody>
+             </table>
+           )}
+         </div>
+       </div>
+     </div>
+   );
 }
