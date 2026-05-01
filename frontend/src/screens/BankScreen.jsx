@@ -7,14 +7,14 @@ const LS_TRANSACTIONS_KEY = "bank_transactions";
 const CURRENCIES = ["EUR", "USD", "GBP", "CZK"];
 
 const BANK_CATALOG = [
-  { name: "Tatra banka", bic: "TATRSKBX", ibanPrefix: "SK12 1100" },
-  { name: "VÚB", bic: "SUBASKBX", ibanPrefix: "SK12 0200" },
-  { name: "ČSOB", bic: "CEKOSKBX", ibanPrefix: "SK12 7500" },
-  { name: "Slovenská sporiteľňa", bic: "GIBASKBX", ibanPrefix: "SK12 0900" },
-  { name: "Revolut", bic: "REVOGB21", ibanPrefix: "LT12 3250" },
-  { name: "Wise", bic: "TRWIGB2L", ibanPrefix: "BE12 9670" },
-  { name: "Firemný účet", bic: "", ibanPrefix: "" },
-  { name: "Súkromný účet", bic: "", ibanPrefix: "" }
+  { name: "Tatra banka", bic: "TATRSKBX" },
+  { name: "VÚB", bic: "SUBASKBX" },
+  { name: "ČSOB", bic: "CEKOSKBX" },
+  { name: "Slovenská sporiteľňa", bic: "GIBASKBX" },
+  { name: "Revolut", bic: "REVOGB21" },
+  { name: "Wise", bic: "TRWIGB2L" },
+  { name: "Firemný účet", bic: "" },
+  { name: "Súkromný účet", bic: "" }
 ];
 
 function BankScreen() {
@@ -117,7 +117,21 @@ function BankScreen() {
 
     // Transakcie handlers
     const handleTransactionChange = (e) => {
-        setTransactionForm({ ...transactionForm, [e.target.name]: e.target.value });
+        const { name, value } = e.target;
+        setTransactionForm({ ...transactionForm, [name]: value });
+        
+        // Automatically set TYPE based on KS value when KS changes
+        if (name === 'ks') {
+            if (value.startsWith("0")) {
+                setTransactionForm({ ...transactionForm, type: "VYDAVOK" });
+            } else if (value.startsWith("1")) {
+                setTransactionForm({ ...transactionForm, type: "PRIJEM" });
+            } else if (value.startsWith("3")) {
+                setTransactionForm({ ...transactionForm, type: "VYDAVOK" });
+            } else if (value.startsWith("5")) {
+                setTransactionForm({ ...transactionForm, type: "VYDAVOK" });
+            }
+        }
     };
 
     const handleAddTransaction = (e) => {
@@ -240,24 +254,24 @@ function BankScreen() {
 
                         <h3 className="subtitle small">Pridať účet</h3>
                         <form onSubmit={handleAddAccount} className="form-grid">
-                            <select
-                                className="input"
-                                style={{ gridColumn: "1 / -1" }}
-                                onChange={(e) => {
-                                    const bank = BANK_CATALOG.find(b => b.name === e.target.value);
-                                    setNewAccount({
-                                        ...newAccount,
-                                        name: bank.name,
-                                        bic: bank.bic,
-                                        iban: bank.ibanPrefix,
-                                    });
-                                }}
-                            >
-                                <option value="">Vyberte banku</option>
-                                {BANK_CATALOG.map(b => (
-                                    <option key={b.name} value={b.name}>{b.name}</option>
-                                ))}
-                            </select>
+<select
+  className="input"
+  style={{ gridColumn: "1 / -1" }}
+  onChange={(e) => {
+    const bank = BANK_CATALOG.find(b => b.name === e.target.value);
+    setNewAccount({
+      ...newAccount,
+      name: bank.name,
+      bic: bank.bic,
+      iban: "", // Clear IBAN when bank changes - user must enter manually
+    });
+  }}
+>
+  <option value="">Vyberte banku</option>
+  {BANK_CATALOG.map(b => (
+    <option key={b.name} value={b.name}>{b.name}</option>
+  ))}
+</select>
                             <input
                                 type="text"
                                 name="name"
@@ -354,38 +368,53 @@ function BankScreen() {
                                     <option value="PRIJEM">Príjem</option>
                                     <option value="VYDAVOK">Výdavok</option>
                                 </select>
-                                <input
-                                    type="text"
-                                    name="description"
-                                    placeholder="Popis / poznámka"
-                                    value={transactionForm.description}
-                                    onChange={handleTransactionChange}
-                                    className="input"
-                                />
-                                <input
-                                    type="text"
-                                    name="vs"
-                                    placeholder="Variabilný symbol (VS)"
-                                    value={transactionForm.vs}
-                                    onChange={handleTransactionChange}
-                                    className="input"
-                                />
-                                <input
-                                    type="text"
-                                    name="ss"
-                                    placeholder="Špecifický symbol (SS)"
-                                    value={transactionForm.ss}
-                                    onChange={handleTransactionChange}
-                                    className="input"
-                                />
-                                <input
-                                    type="text"
-                                    name="ks"
-                                    placeholder="Konštantný symbol (KS)"
-                                    value={transactionForm.ks}
-                                    onChange={handleTransactionChange}
-                                    className="input"
-                                />
+                                  <input
+                                      type="text"
+                                      name="description"
+                                      placeholder="Popis / poznámka"
+                                      value={transactionForm.description}
+                                      onChange={handleTransactionChange}
+                                      className="input"
+                                  />
+                                  <div className="vs-ss-ks-row">
+                                      <input
+                                          type="text"
+                                          name="vs"
+                                          placeholder="Variabilný symbol (VS)"
+                                          value={transactionForm.vs}
+                                          onChange={handleTransactionChange}
+                                          className="input"
+                                      />
+                                      <input
+                                          type="text"
+                                          name="ss"
+                                          placeholder="Špecifický symbol (SS)"
+                                          value={transactionForm.ss}
+                                          onChange={handleTransactionChange}
+                                          className="input"
+                                      />
+                                      <select
+                                          name="ks"
+                                          value={transactionForm.ks}
+                                          onChange={handleTransactionChange}
+                                          className="input"
+                                      >
+                                          <option value="">Konštantný symbol (KS)</option>
+                                          <optgroup label="Platby za tovar a služby">
+                                              <option value="0008">0008 – Platby za tovar</option>
+                                              <option value="0108">0108 – Platby za poľnohospodárske výrobky</option>
+                                              <option value="0308">0308 – Platby za služby</option>
+                                          </optgroup>
+                                          <optgroup label="Platby za vykurovanie a teplú vodu">
+                                              <option value="0003">0003 – Platby za vykurovanie</option>
+                                              <option value="0004">0004 – Platby za teplú vodu</option>
+                                          </optgroup>
+                                          <optgroup label="Ostatné platby">
+                                              <option value="0000">0000 – Špeciálna platba</option>
+                                              <option value="9999">9999 – Ostatné platby</option>
+                                          </optgroup>
+                                      </select>
+                                  </div>
                                 <input
                                     type="text"
                                     name="counterpartyIban"
@@ -433,30 +462,43 @@ function BankScreen() {
                                 <option value="PRIJEM">Príjem</option>
                                 <option value="VYDAVOK">Výdavok</option>
                             </select>
-                            <input
-                                type="text"
-                                name="vs"
-                                placeholder="VS"
-                                value={filters.vs}
-                                onChange={handleFilterChange}
-                                className="input"
-                            />
-                            <input
-                                type="text"
-                                name="ss"
-                                placeholder="SS"
-                                value={filters.ss}
-                                onChange={handleFilterChange}
-                                className="input"
-                            />
-                            <input
-                                type="text"
-                                name="ks"
-                                placeholder="KS"
-                                value={filters.ks}
-                                onChange={handleFilterChange}
-                                className="input"
-                            />
+                             <input
+                                 type="text"
+                                 name="vs"
+                                 placeholder="VS"
+                                 value={filters.vs}
+                                 onChange={handleFilterChange}
+                                 className="input"
+                             />
+                             <input
+                                 type="text"
+                                 name="ss"
+                                 placeholder="SS"
+                                 value={filters.ss}
+                                 onChange={handleFilterChange}
+                                 className="input"
+                             />
+                             <select
+                                 name="ks"
+                                 value={filters.ks}
+                                 onChange={handleFilterChange}
+                                 className="input"
+                             >
+                                 <option value="">Konštantný symbol (KS)</option>
+                                 <optgroup label="Platby za tovar a služby">
+                                     <option value="0008">0008 – Platby za tovar</option>
+                                     <option value="0108">0108 – Platby za poľnohospodárske výrobky</option>
+                                     <option value="0308">0308 – Platby za služby</option>
+                                 </optgroup>
+                                 <optgroup label="Platby za vykurovanie a teplú vodu">
+                                     <option value="0003">0003 – Platby za vykurovanie</option>
+                                     <option value="0004">0004 – Platby za teplú vodu</option>
+                                 </optgroup>
+                                 <optgroup label="Ostatné platby">
+                                     <option value="0000">0000 – Špeciálna platba</option>
+                                     <option value="9999">9999 – Ostatné platby</option>
+                                 </optgroup>
+                             </select>
                             <input
                                 type="number"
                                 name="amountMin"
