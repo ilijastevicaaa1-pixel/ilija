@@ -317,15 +317,15 @@ function BankScreen() {
                     <section className="bank-section">
                         <h2 className="subtitle">Transakcie</h2>
 
-                        <div className="block">
-                            <button
-                                type="button"
-                                className="btn-secondary"
-                                onClick={() => setManualMode((m) => !m)}
-                            >
-                                {manualMode ? "Prepni na asistenta (placeholder)" : "Ručný vstup"}
-                            </button>
-                        </div>
+                         <div className="block">
+                             <button
+                                 type="button"
+                                 className="btn-assistant"
+                                 onClick={() => setManualMode((m) => !m)}
+                             >
+                                 🤖 Prepni na asistenta
+                             </button>
+                         </div>
 
                         {manualMode && (
                             <form onSubmit={handleAddTransaction} className="form-grid">
