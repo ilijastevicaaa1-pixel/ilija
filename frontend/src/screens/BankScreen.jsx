@@ -6,6 +6,17 @@ const LS_TRANSACTIONS_KEY = "bank_transactions";
 
 const CURRENCIES = ["EUR", "USD", "GBP", "CZK"];
 
+const BANK_CATALOG = [
+  { name: "Tatra banka", bic: "TATRSKBX", ibanPrefix: "SK12 1100" },
+  { name: "VÚB", bic: "SUBASKBX", ibanPrefix: "SK12 0200" },
+  { name: "ČSOB", bic: "CEKOSKBX", ibanPrefix: "SK12 7500" },
+  { name: "Slovenská sporiteľňa", bic: "GIBASKBX", ibanPrefix: "SK12 0900" },
+  { name: "Revolut", bic: "REVOGB21", ibanPrefix: "LT12 3250" },
+  { name: "Wise", bic: "TRWIGB2L", ibanPrefix: "BE12 9670" },
+  { name: "Firemný účet", bic: "", ibanPrefix: "" },
+  { name: "Súkromný účet", bic: "", ibanPrefix: "" }
+];
+
 function BankScreen() {
     // Účty
     const [accounts, setAccounts] = useState([]);
@@ -229,6 +240,24 @@ function BankScreen() {
 
                         <h3 className="subtitle small">Pridať účet</h3>
                         <form onSubmit={handleAddAccount} className="form-grid">
+                            <select
+                                className="input"
+                                style={{ gridColumn: "1 / -1" }}
+                                onChange={(e) => {
+                                    const bank = BANK_CATALOG.find(b => b.name === e.target.value);
+                                    setNewAccount({
+                                        ...newAccount,
+                                        name: bank.name,
+                                        bic: bank.bic,
+                                        iban: bank.ibanPrefix,
+                                    });
+                                }}
+                            >
+                                <option value="">Vyberte banku</option>
+                                {BANK_CATALOG.map(b => (
+                                    <option key={b.name} value={b.name}>{b.name}</option>
+                                ))}
+                            </select>
                             <input
                                 type="text"
                                 name="name"
