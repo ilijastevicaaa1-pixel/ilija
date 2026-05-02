@@ -1,29 +1,60 @@
-
+/* POZADINA */
 .rokovnik-background {
   min-height: 100vh;
   padding: 40px 20px;
-  background: linear-gradient(135deg, #6a5acd, #7b68ee, #836fff);
+  background: linear-gradient(135deg, #667eea, #764ba2);
   background-attachment: fixed;
 }
 
-/* frontend/src/styles/deadlines.css */
-
+/* LAYOUT */
 .deadlines-screen {
   max-width: 1100px;
   margin: 0 auto;
   padding: 24px 16px 48px;
 }
 
+/* HEADER */
+.deadlines-header {
+  margin-bottom: 20px;
+}
+
 .deadlines-header h1 {
-  font-size: 24px;
+  font-size: 26px;
+  margin-top: 10px;
   margin-bottom: 4px;
 }
 
 .deadlines-subtitle {
-  color: #666;
+  color: #ddd;
   margin-bottom: 24px;
 }
 
+/* BACK BUTTON — kao na banci */
+.deadlines-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: #1f6feb;
+  color: white;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.deadlines-back-btn:hover {
+  background: #1554b3;
+}
+
+.deadlines-back-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* KARTICE */
 .deadlines-card {
   background: #ffffff;
   border-radius: 12px;
@@ -37,6 +68,7 @@
   margin-bottom: 12px;
 }
 
+/* FORMA */
 .deadlines-form .form-row {
   display: grid;
   grid-template-columns: 1.5fr 1fr;
@@ -77,12 +109,14 @@
   margin-top: 8px;
 }
 
+/* FILTERS */
 .deadlines-filters {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 12px;
 }
 
+/* LISTA */
 .deadlines-empty {
   color: #666;
   font-size: 14px;
@@ -112,6 +146,7 @@
   padding: 3px 4px;
 }
 
+/* DELETE BUTTON */
 .btn-danger {
   background: #dc2626;
   color: #fff;
@@ -124,19 +159,4 @@
 
 .btn-danger:hover {
   background: #b91c1c;
-}
-
-.back-button {
-    background: #6a5acd;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 14px;
-    transition: background 0.3s;
-}
-
-.back-button:hover {
-    background: #5a4ca8;
 }
