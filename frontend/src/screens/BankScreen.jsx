@@ -36,7 +36,6 @@ function BankScreen() {
     const [transactionForm, setTransactionForm] = useState({
         date: "",
         amount: "",
-        type: "",
         description: "",
         vs: "",
         ss: "",
@@ -48,7 +47,6 @@ function BankScreen() {
     const [filters, setFilters] = useState({
         dateFrom: "",
         dateTo: "",
-        type: "",
         vs: "",
         ss: "",
         ks: "",
@@ -119,19 +117,6 @@ function BankScreen() {
     const handleTransactionChange = (e) => {
         const { name, value } = e.target;
         setTransactionForm({ ...transactionForm, [name]: value });
-
-        // Automatically set TYPE based on KS value when KS changes
-        if (name === 'ks') {
-            if (value.startsWith("0")) {
-                setTransactionForm({ ...transactionForm, type: "VYDAVOK" });
-            } else if (value.startsWith("1")) {
-                setTransactionForm({ ...transactionForm, type: "PRIJEM" });
-            } else if (value.startsWith("3")) {
-                setTransactionForm({ ...transactionForm, type: "VYDAVOK" });
-            } else if (value.startsWith("5")) {
-                setTransactionForm({ ...transactionForm, type: "VYDAVOK" });
-            }
-        }
     };
 
     const handleAddTransaction = (e) => {
@@ -139,8 +124,7 @@ function BankScreen() {
         if (
             !selectedAccountId ||
             !transactionForm.date ||
-            !transactionForm.amount ||
-            !transactionForm.type
+            !transactionForm.amount
         ) {
             return;
         }
@@ -150,7 +134,6 @@ function BankScreen() {
             accountId: selectedAccountId,
             date: transactionForm.date,
             amount: Number(transactionForm.amount),
-            type: transactionForm.type, // PRIJEM / VYDAVOK
             description: transactionForm.description,
             vs: transactionForm.vs,
             ss: transactionForm.ss,
@@ -191,8 +174,6 @@ function BankScreen() {
     const filteredTransactions = transactions.filter((t) => {
         if (filters.accountId && t.accountId !== filters.accountId) return false;
 
-        if (filters.type && t.type !== filters.type) return false;
-
         if (filters.vs && t.vs !== filters.vs) return false;
         if (filters.ss && t.ss !== filters.ss) return false;
         if (filters.ks && t.ks !== filters.ks) return false;
@@ -212,8 +193,9 @@ function BankScreen() {
         (t) => t.accountId === selectedAccountId
     );
 
+    // Novi balans — amount direktno određuje smer
     const accountBalance = accountTransactions.reduce((sum, t) => {
-        return t.type === "PRIJEM" ? sum + t.amount : sum - t.amount;
+        return sum + t.amount;
     }, 0);
 
     const lastTransactions = accountTransactions
