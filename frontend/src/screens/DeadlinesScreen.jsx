@@ -84,6 +84,7 @@ export default function DeadlineScreen() {
     >
       <div className="deadlines-screen">
         <div className="deadlines-header">
+          <a href="/" className="back-button">← Späť</a>
           <h1>Úlohy a termíny</h1>
           <p className="deadlines-subtitle">
             Jednoduchý prehľad úloh, termínov a priorít.
@@ -224,8 +225,7 @@ export default function DeadlineScreen() {
                       <select
                         value={t.status}
                         onChange={(e) =>
-                          handleStatusChange(t.id, e.target.value)
-                        }
+                          handleStatusChange(t.id, e.target.value)}
                       >
                         {STATUS_OPTIONS.map((s) => (
                           <option key={s} value={s}>
