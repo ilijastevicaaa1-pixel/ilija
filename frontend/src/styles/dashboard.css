@@ -1,119 +1,86 @@
-﻿/* frontend/src/styles/deadlines.css */
+﻿/*/* ============================= */
+/*  POZADINA ZA CEO DASHBOARD    */
+/* ============================= */
 
-.deadlines-screen {
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 24px 16px 48px;
+.dashboard-background {
+    background-image: url("/background.jpg");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
 }
 
-.deadlines-header h1 {
-  font-size: 24px;
-  margin-bottom: 4px;
+/* ============================= */
+/*  TVOJ POSTOJEĆI DASHBOARD CSS */
+/* ============================= */
+
+.dashboard {
+    padding: 24px;
+    background: #f5f7fa;
+    min-height: 100vh;
 }
 
-.deadlines-subtitle {
-  color: #666;
-  margin-bottom: 24px;
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
 }
 
-.deadlines-card {
-  background: #ffffff;
-  border-radius: 12px;
-  padding: 16px 18px 18px;
-  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
-  margin-bottom: 18px;
+.dashboard-header h1 {
+    font-size: 22px;
+    margin: 0;
 }
 
-.deadlines-card h2 {
-  font-size: 18px;
-  margin-bottom: 12px;
+.dashboard-nav {
+    gap: 16px;
+    display: flex;
 }
 
-.deadlines-form .form-row {
-  display: grid;
-  grid-template-columns: 1.5fr 1fr;
-  gap: 12px;
-  margin-bottom: 10px;
+.dashboard-nav a {
+    text-decoration: none;
+    color: #555;
+    font-weight: 500;
+    padding: 6px 12px;
+    border-radius: 6px;
 }
 
-.form-field {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  margin-bottom: 8px;
+.dashboard-nav a:hover,
+.dashboard-nav a.active {
+    background: #e0e7ff;
+    color: #1f6feb;
 }
 
-.form-field label {
-  font-size: 13px;
-  color: #444;
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 20px;
 }
 
-.form-field input,
-.form-field select,
-.form-field textarea {
-  border-radius: 8px;
-  border: 1px solid #d0d7de;
-  padding: 6px 8px;
-  font-size: 14px;
+.dashboard-card {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    padding: 20px;
 }
 
-.form-field input:focus,
-.form-field select:focus,
-.form-field textarea:focus {
-  outline: none;
-  border-color: #1f6feb;
-  box-shadow: 0 0 0 1px rgba(31, 111, 235, 0.2);
+.dashboard-card h2 {
+    margin-top: 0;
+    margin-bottom: 16px;
+    font-size: 18px;
+    color: #222;
 }
 
-.form-actions {
-  margin-top: 8px;
+.dashboard-card p {
+    color: #666;
+    line-height: 1.5;
 }
 
-.deadlines-filters {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-}
-
-.deadlines-empty {
-  color: #666;
-  font-size: 14px;
-}
-
-.deadlines-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 14px;
-}
-
-.deadlines-table th,
-.deadlines-table td {
-  border-bottom: 1px solid #e5e7eb;
-  padding: 6px 4px;
-  text-align: left;
-  vertical-align: top;
-}
-
-.deadlines-table th {
-  font-weight: 600;
-  color: #374151;
-}
-
-.deadlines-table select {
-  font-size: 13px;
-  padding: 3px 4px;
-}
-
-.btn-danger {
-  background: #dc2626;
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  padding: 4px 8px;
-  cursor: pointer;
-  font-size: 13px;
-}
-
-.btn-danger:hover {
-  background: #b91c1c;
+/* Responsive */
+@media (max-width: 640px) {
+    .dashboard-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
 }
