@@ -349,6 +349,7 @@ function BankScreen() {
                                     <option value="PRIJEM">Príjem</option>
                                     <option value="VYDAVOK">Výdavok</option>
                                 </select>
+
                                 <input
                                     type="text"
                                     name="description"
