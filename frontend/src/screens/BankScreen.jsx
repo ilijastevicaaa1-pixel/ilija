@@ -385,6 +385,7 @@ function BankScreen() {
                                         onChange={handleTransactionChange}
                                         className="input"
                                     />
+
                                     <input
                                         type="text"
                                         name="ss"
@@ -393,6 +394,7 @@ function BankScreen() {
                                         onChange={handleTransactionChange}
                                         className="input"
                                     />
+
                                     <select
                                         name="ks"
                                         value={transactionForm.ks}
@@ -400,29 +402,105 @@ function BankScreen() {
                                         className="input"
                                     >
                                         <option value="">Konštantný symbol (KS)</option>
+
                                         <optgroup label="Platby za tovar a služby">
                                             <option value="0008">0008 – Platby za tovar</option>
                                             <option value="0108">0108 – Platby za poľnohospodárske výrobky</option>
                                             <option value="0308">0308 – Platby za služby</option>
                                         </optgroup>
-                                        <optgroup label="Platby za vykurovanie a teplú vodu">
-                                            <option value="0003">0003 – Platby za vykurovanie</option>
-                                            <option value="0004">0004 – Platby za teplú vodu</option>
+
+                                        <optgroup label="Vzťahy k štátnemu rozpočtu (ŠR)">
+                                            <option value="1018">1018 – Príjmy z podnikania a vlastníctva majetku</option>
+                                            <option value="1118">1118 – Administratívne a iné poplatky</option>
+                                            <option value="3118">3118 – Poistné a príspevok zamestnávateľa</option>
+                                            <option value="1318">1318 – Splácanie úverov a pôžičiek zo ŠR</option>
+                                            <option value="2018">2018 – Ostatné príjmy vo vzťahu k ŠR</option>
+                                            <option value="3718">3718 – Nájomné vo vzťahu k ŠR</option>
+                                            <option value="3818">3818 – Ostatné tovary a služby vo vzťahu k ŠR</option>
+                                            <option value="5118">5118 – Splátky úrokov a ostatné platby</option>
+                                            <option value="5918">5918 – Splácanie istiny, výnosov z CP</option>
                                         </optgroup>
-                                        <optgroup label="Ostatné platby">
-                                            <option value="0000">0000 – Špeciálna platba</option>
-                                            <option value="9999">9999 – Ostatné platby</option>
+
+                                        <optgroup label="Platby za dodávky investičnej povahy">
+                                            <option value="0028">0028 – Platby za dodávky investičnej povahy</option>
+                                        </optgroup>
+
+                                        <optgroup label="Mzdové a osobné náklady">
+                                            <option value="0038">0038 – Prostriedky na mzdy</option>
+                                            <option value="0138">0138 – Zrážky z miezd</option>
+                                            <option value="0938">0938 – Dávky sociálneho zabezpečenia</option>
+                                        </optgroup>
+
+                                        <optgroup label="Príjmy do ŠR z daní a poplatkov">
+                                            <option value="1148">1148 – Bežná záloha dane</option>
+                                            <option value="1348">1348 – Doúčtovanie daní</option>
+                                            <option value="1548">1548 – Dodatočné daňové priznanie</option>
+                                            <option value="1748">1748 – Vyúčtovanie dane</option>
+                                            <option value="1948">1948 – Zúčtovanie rozdielov preddavkov</option>
+                                            <option value="2148">2148 – Dodatočne vyrubená daň</option>
+                                            <option value="2948">2948 – Paušálna daň</option>
+                                            <option value="3148">3148 – Penále z kontroly</option>
+                                            <option value="3348">3348 – Penále zo správy</option>
+                                            <option value="3548">3548 – Penále z kontroly</option>
+                                            <option value="3748">3748 – Penále zo správy</option>
+                                            <option value="4948">4948 – Vrátenie dane</option>
+                                            <option value="5148">5148 – Zvýšenie dane</option>
+                                            <option value="5348">5348 – Nárok na odpočet dane</option>
+                                            <option value="5748">5748 – Dodatočné daňové priznanie</option>
+                                            <option value="5948">5948 – Zvýšenie dane – inšpekcia</option>
+                                            <option value="6148">6148 – Dodatočná platba z inšpekcie</option>
+                                            <option value="6348">6348 – Pokuta z kontroly</option>
+                                            <option value="6548">6548 – Pokuta zo správy</option>
+                                            <option value="6748">6748 – Pokuty vyrubené inšpekciou</option>
+                                            <option value="6948">6948 – Pokuty ktoré nie sú príjmom ŠR</option>
+                                            <option value="7148">7148 – Penále z inšpekcie</option>
+                                            <option value="7348">7348 – Úrok pri odklade platenia</option>
+                                            <option value="7548">7548 – Exekučné náklady</option>
+                                            <option value="7748">7748 – Úrok za oneskorenie vrátenia preplatku</option>
+                                            <option value="7948">7948 – Blokové pokuty</option>
+                                            <option value="8148">8148 – Platba s predpisom</option>
+                                            <option value="8748">8748 – Vyrovnanie preplatku</option>
+                                        </optgroup>
+
+                                        <optgroup label="Ostatné finančné platby">
+                                            <option value="0058">0058 – Penále, sankcie, náhrady škôd</option>
+                                            <option value="2058">2058 – Nákup cenných papierov</option>
+                                            <option value="3058">3058 – Predaj cenných papierov</option>
+                                            <option value="4058">4058 – Výnosy z CP, splatnosť istiny</option>
+                                            <option value="5058">5058 – Ostatné obchody s CP</option>
+                                            <option value="0158">0158 – Operatívne výdavky</option>
+                                            <option value="0358">0358 – Výplaty cez poštu</option>
+                                            <option value="0558">0558 – Finančné platby ostatné</option>
+                                            <option value="2558">2558 – Úhrady poistných plnení</option>
+                                            <option value="3558">3558 – Platby poistného poisťovniam</option>
+                                            <option value="0858">0858 – Prechodne poskytnuté pôžičky</option>
+                                        </optgroup>
+
+                                        <optgroup label="Prevody medzi účtami">
+                                            <option value="0068">0068 – Prevody na mzdy</option>
+                                            <option value="0168">0168 – Splátky úverov</option>
+                                            <option value="0968">0968 – Ostatné prevody</option>
+                                        </optgroup>
+
+                                        <optgroup label="Pokladničné príjmy">
+                                            <option value="0078">0078 – Tržby za tovar</option>
+                                            <option value="0178">0178 – Tržby za služby</option>
                                         </optgroup>
                                     </select>
+
+                                    <input
+                                        type="text"
+                                        name="counterpartyIban"
+                                        placeholder="Protiúčet (IBAN dodávateľa/odberateľa)"
+                                        value={transactionForm.counterpartyIban}
+                                        onChange={handleTransactionChange}
+                                        className="input"
+                                    />
                                 </div>
-                                <input
-                                    type="text"
-                                    name="counterpartyIban"
-                                    placeholder="Protiúčet (IBAN dodávateľa/odberateľa)"
-                                    value={transactionForm.counterpartyIban}
-                                    onChange={handleTransactionChange}
-                                    className="input"
-                                />
+
+
+
+
 
                                 <button
                                     type="submit"
