@@ -164,7 +164,6 @@ function BankScreen() {
         setTransactionForm({
             date: "",
             amount: "",
-            type: "",
             description: "",
             vs: "",
             ss: "",
