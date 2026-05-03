@@ -56,29 +56,55 @@ function DashboardScreen() {
 
     return (
         <>
-            {/* Banka button */}
-            <a
-                href="/bank"
-                style={{
-                    position: "fixed",
-                    top: "30px",
-                    left: "30px",
-                    padding: "12px 24px",
-                    background: "linear-gradient(135deg, #4CAF50, #45a049)",
-                    color: "white",
-                    textDecoration: "none",
-                    borderRadius: "12px",
-                    fontWeight: "bold",
-                    fontSize: "1rem",
-                    boxShadow: "0 4px 14px rgba(76,175,80,0.4)",
-                    transition: "0.3s",
-                    zIndex: 999
-                }}
-                onMouseEnter={(e) => (e.target.style.transform = "scale(1.05)")}
-                onMouseLeave={(e) => (e.target.style.transform = "scale(1)")}
-            >
-                Banka
-            </a>
+    {/* Banka button */}
+    <a
+        href="/bank"
+        style={{
+            position: "fixed",
+            top: "30px",
+            left: "30px",
+            padding: "12px 24px",
+            background: "linear-gradient(135deg, #4CAF50, #45a049)",
+            color: "white",
+            textDecoration: "none",
+            borderRadius: "12px",
+            fontWeight: "bold",
+            fontSize: "1rem",
+            boxShadow: "0 4px 14px rgba(76,175,80,0.4)",
+            transition: "0.3s",
+            zIndex: 999
+        }}
+        onMouseEnter={(e) => (e.target.style.transform = "scale(1.05)")}
+        onMouseLeave={(e) => (e.target.style.transform = "scale(1)")}
+    >
+        Banka
+    </a>
+
+    {/* Manual Entry button */}
+    <button
+        className="dashboard-btn manual-entry-btn"
+        onClick={() => window.location.href = "/manual-entry"}
+        style={{
+            position: "fixed",
+            top: "80px",
+            left: "30px",
+            padding: "12px 24px",
+            background: "linear-gradient(135deg, #6f42c1, #5a32a3)",
+            color: "white",
+            border: "none",
+            borderRadius: "12px",
+            fontWeight: "bold",
+            fontSize: "1rem",
+            boxShadow: "0 4px 14px rgba(111,66,193,0.4)",
+            transition: "0.3s",
+            zIndex: 999,
+            cursor: "pointer"
+        }}
+        onMouseEnter={(e) => (e.target.style.transform = "scale(1.05)")}
+        onMouseLeave={(e) => (e.target.style.transform = "scale(1)")}
+    >
+        ✍️ Ručný vstup
+    </button>
 
              {/* Úlohy a termíny button */}
              <a
