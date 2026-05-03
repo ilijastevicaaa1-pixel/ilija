@@ -20,13 +20,14 @@ export default function ManualEntryScreen() {
 
             {/* Sekcie */}
             <div className="manual-entry-grid">
+
                 {/* BANKA */}
                 <div className="manual-entry-card">
                     <h2>🏦 Banka</h2>
                     <p>Ručné pridanie bankovej transakcie (príjem / výdavok).</p>
                     <button
                         className="btn-primary"
-                        onClick={() => navigate("/manual/banka")}
+                        onClick={() => navigate("/manual-entry/banka")}
                     >
                         Otvoriť
                     </button>
@@ -38,7 +39,7 @@ export default function ManualEntryScreen() {
                     <p>Ručné účtovanie hotovostných príjmov a výdavkov.</p>
                     <button
                         className="btn-primary"
-                        onClick={() => navigate("/manual/pokladna")}
+                        onClick={() => navigate("/manual-entry/pokladna")}
                     >
                         Otvoriť
                     </button>
@@ -50,7 +51,7 @@ export default function ManualEntryScreen() {
                     <p>Ručné vytvorenie alebo zaúčtovanie faktúry.</p>
                     <button
                         className="btn-primary"
-                        onClick={() => navigate("/manual/faktura")}
+                        onClick={() => navigate("/manual-entry/faktura")}
                     >
                         Otvoriť
                     </button>
@@ -62,7 +63,7 @@ export default function ManualEntryScreen() {
                     <p>Ručné pridanie alebo úprava dodávateľa.</p>
                     <button
                         className="btn-primary"
-                        onClick={() => navigate("/manual/dodavatel")}
+                        onClick={() => navigate("/manual-entry/dodavatel")}
                     >
                         Otvoriť
                     </button>
@@ -74,7 +75,7 @@ export default function ManualEntryScreen() {
                     <p>Ručné pridanie alebo úprava odberateľa.</p>
                     <button
                         className="btn-primary"
-                        onClick={() => navigate("/manual/odberatel")}
+                        onClick={() => navigate("/manual-entry/odberatel")}
                     >
                         Otvoriť
                     </button>
@@ -86,7 +87,7 @@ export default function ManualEntryScreen() {
                     <p>Ručné účtovanie do hlavnej knihy (MD/DAL).</p>
                     <button
                         className="btn-primary"
-                        onClick={() => navigate("/manual/uctovny-zapis")}
+                        onClick={() => navigate("/manual-entry/uctovny-zapis")}
                     >
                         Otvoriť
                     </button>
@@ -98,7 +99,7 @@ export default function ManualEntryScreen() {
                     <p>Ručné doplnenie údajov pre DPH priznanie.</p>
                     <button
                         className="btn-primary"
-                        onClick={() => navigate("/manual/dph")}
+                        onClick={() => navigate("/manual-entry/dph")}
                     >
                         Otvoriť
                     </button>
@@ -110,11 +111,12 @@ export default function ManualEntryScreen() {
                     <p>Ďalšie typy účtovných zápisov (budúce rozšírenie).</p>
                     <button
                         className="btn-primary"
-                        onClick={() => navigate("/manual/other")}
+                        onClick={() => navigate("/manual-entry/other")}
                     >
                         Otvoriť
                     </button>
                 </div>
+
             </div>
         </div>
     );
