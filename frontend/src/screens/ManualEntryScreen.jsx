@@ -1,12 +1,11 @@
 import { useNavigate } from "react-router-dom";
-import "./manual-entry.css"; // ako želiš stilove, možeš dodati kasnije
+import "../styles/manual-entry.css";
 
 export default function ManualEntryScreen() {
     const navigate = useNavigate();
 
     return (
         <div className="manual-entry-screen">
-
             {/* Späť */}
             <button onClick={() => window.history.back()} className="btn-back">
                 ← Späť
@@ -21,7 +20,6 @@ export default function ManualEntryScreen() {
 
             {/* Sekcie */}
             <div className="manual-entry-grid">
-
                 {/* BANKA */}
                 <div className="manual-entry-card">
                     <h2>🏦 Banka</h2>
@@ -117,7 +115,6 @@ export default function ManualEntryScreen() {
                         Otvoriť
                     </button>
                 </div>
-
             </div>
         </div>
     );
