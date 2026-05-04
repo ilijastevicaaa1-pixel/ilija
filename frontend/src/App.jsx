@@ -42,7 +42,7 @@ import ContractsScreen from "./pages/ContractsScreen";
 import InternalRecordsScreen from "./pages/InternalRecordsScreen";
 import OffersScreen from "./pages/OffersScreen";
 import TravelOrdersScreen from "./pages/TravelOrdersScreen";
-import SalariesScreen from "./pages/SalariesScreen";
+
 import ManualEntryScreen from "./screens/ManualEntryScreen.jsx";
 import BankaEntry from "./screens/manual/BankaEntry.jsx";
 
