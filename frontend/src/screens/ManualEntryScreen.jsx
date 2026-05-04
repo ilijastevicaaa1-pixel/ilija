@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+
 import "../styles/manual-entry.css";
 
 export default function ManualEntryScreen() {
