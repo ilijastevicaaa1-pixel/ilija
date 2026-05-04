@@ -43,6 +43,8 @@ import InternalRecordsScreen from "./pages/InternalRecordsScreen";
 import OffersScreen from "./pages/OffersScreen";
 import TravelOrdersScreen from "./pages/TravelOrdersScreen";
 import SalariesScreen from "./pages/SalariesScreen";
+import ManualEntryScreen from "./screens/ManualEntryScreen.jsx";
+import BankaEntry from "./screens/manual/BankaEntry.jsx";
 
 function App() {
     return (
@@ -266,6 +268,25 @@ function App() {
                         </ProtectedRoute>
                     }
                 />
+
+                {/* Manual Entry */}
+                <Route
+                    path="/manual-entry"
+                    element={
+                        <ProtectedRoute>
+                            <ManualEntryScreen />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/manual-entry/banka"
+                    element={
+                        <ProtectedRoute>
+                            <BankaEntry />
+                        </ProtectedRoute>
+                    }
+                />
+                {/* Dodaj ostale sub-rute po potrebi: /pokladna, /faktura itd. */}
 
             </Routes>
         </Router>
