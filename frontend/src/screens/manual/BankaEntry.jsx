@@ -1,13 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { apiFetch, useAuth } from '../../utils/api';  // Prilagodi putanju ako treba
 
 export default function BankaEntry() {
     const [form, setForm] = useState({ datum: '', opis: '', iznos: '', tip: 'prihod' });
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState('');
+    const [token, setToken] = useState('');
     const navigate = useNavigate();
-    const { token } = useAuth();  // ili useContext(AuthContext)
+
+    useEffect(() => {
+        const t = localStorage.getItem('token') || sessionStorage.getItem('token');
+        if (t) setToken(t);
+    }, []);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
