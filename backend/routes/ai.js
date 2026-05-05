@@ -42,7 +42,7 @@ router.post('/command', auth, async (req, res) => {
     const userId = req.user.id;
 
     let state = userStates.get(userId) || null;
-    let wizardData = {};
+    let wizardData = req.body.context?.wizardData || {};
 
     const trimmed = text.trim().toLowerCase();
 
