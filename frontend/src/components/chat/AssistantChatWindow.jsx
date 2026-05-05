@@ -342,14 +342,7 @@ function AssistantChatWindow({ onClose }) {
             return;
         }
 
-        // Ako je korisnik u kategoriji i izgovori broj/rec broja van opsega, vrati ga u meni kategorije.
-        if (activeCategory && parseMenuNumber(trimmed)) {
-            const retryMessage = formatSubOptions(activeCategory);
-            setMessages((prev) => [...prev, { role: "assistant", text: retryMessage }]);
-            speak(retryMessage);
-            setIsSending(false);
-            return;
-        }
+        // REMOVED: Frontend retry loop - BACKEND handles all
 
         // ✅ BACKEND MODE: Skip frontend logic after category selected
         if (selectedCategory) {
