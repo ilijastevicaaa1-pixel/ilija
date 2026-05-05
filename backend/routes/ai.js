@@ -61,7 +61,7 @@ router.post('/command', auth, async (req, res) => {
       if (submenu) {
         state = `${state}_${submenu}`;
         userStates.set(userId, state);
-        const promptData = getWizardPrompt(state);
+        const promptData = getWizardPrompt(state, {});
         if (promptData) {
           return res.json({ reply: promptData.prompt, context: { state, wizardData: promptData.data } });
         }
