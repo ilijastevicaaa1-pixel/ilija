@@ -1,6 +1,6 @@
 import express from 'express';
 import { getDb } from '../db.js';
-import auth from '../authMiddleware.js';
+import { auth } from '../authMiddleware.js';
 import { wizardHandlers, getWizardPrompt } from '../aiHandlers.js';
 
 const router = express.Router();
