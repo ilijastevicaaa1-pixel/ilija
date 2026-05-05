@@ -371,7 +371,7 @@ function AssistantChatWindow({ onClose }) {
         try {
             const data = await apiFetch("/api/ai/command", {
                 method: "POST",
-                body: { text: trimmed, context },
+                body: { text: trimmed, context, sessionId: context.sessionId || 'chat-' + Date.now() },
             });
 
             const reply = data.reply || data.answer || "Rozumiem.";
