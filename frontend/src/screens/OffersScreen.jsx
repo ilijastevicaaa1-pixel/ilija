@@ -1,5 +1,5 @@
 import React from "react";
-import "./offers.css";
+import "../styles/offers.css";
 
 const OffersScreen = () => {
   return (
