@@ -227,36 +227,24 @@ function AssistantChatWindow({ onClose }) {
 
         const utterance = new window.SpeechSynthesisUtterance(text);
         const voices = voicesRef.current;
-
-        // 🔹 1. Izbor NAJBOLJEG slovačkog glasa
         const preferredVoice =
-            voices.find((v) =>
-                v.lang?.toLowerCase().includes("sk") &&
-                v.name?.toLowerCase().includes("microsoft")
-            ) ||
-            voices.find((v) => v.lang?.toLowerCase().startsWith("sk")) ||
-            voices.find((v) => v.lang?.toLowerCase().startsWith("cs"));
+            voices.find((voice) => voice.lang?.toLowerCase().startsWith("sk")) ||
+            voices.find((voice) => voice.lang?.toLowerCase().startsWith("cs")) ||
+            voices.find((voice) => voice.lang?.toLowerCase().startsWith("sr"));
 
         if (preferredVoice) utterance.voice = preferredVoice;
-
-        // 🔹 2. Jezik
         utterance.lang = preferredVoice?.lang || "sk-SK";
-
-        // 🔹 3. SPORIJE I JASNIJE
-        utterance.rate = 0.85;   // idealno za slovački
+        utterance.rate = 1;
         utterance.pitch = 1;
-
-        // 🔹 4. Ne sme da pojede prvu reč
-        window.speechSynthesis.cancel();
-        setTimeout(() => {
-            window.speechSynthesis.speak(utterance);
-        }, 150);
 
         utterance.onerror = () => {
             if (text === greeting) needsGreetingRetryRef.current = true;
         };
 
-        // 🔹 5. Ako browser blokira autoplay
+        window.speechSynthesis.cancel();
+        window.speechSynthesis.speak(utterance);
+
+        // If browser blocks autoplay, queue may stay empty after speak()
         if (text === greeting) {
             setTimeout(() => {
                 if (!window.speechSynthesis.speaking && !window.speechSynthesis.pending) {
@@ -454,7 +442,7 @@ function AssistantChatWindow({ onClose }) {
 
     return (
         <>
-
+            <link rel="stylesheet" href="/src/styles/chat-modern.css" />
             <div className="modern-chat-overlay" role="dialog" aria-modal="true" onClick={onClose}>
                 <section className="modern-chat-panel" onClick={(e) => e.stopPropagation()}>
                     <header className="modern-chat-header">
