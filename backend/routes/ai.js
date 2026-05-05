@@ -41,7 +41,7 @@ const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 router.post('/command', async (req, res) => {
   try {
     const { text, image } = req.body;
-    console.log('[AI /command] Request received:', { hasText: !!text, hasImage: !!image, imageType: typeof image });
+    console.log('[AI /command] FULL REQUEST BODY:', req.body);
     if (image) {
       console.log('[AI /command] Image received but blocked');
       return res.status(400).json({ reply: 'AI asistent trenutno ne podr++ava slike. Koristi tekstualni opis fakture.' });
@@ -69,8 +69,11 @@ router.post('/command', async (req, res) => {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${apiKey}`
     };
+    console.log('[AI] Sending to AI:', { url, model: body.model, preview: body.messages[1].content.substring(0, 100) + '...' });
     const aiRes = await nodeFetch(url, { method: 'POST', headers, body: JSON.stringify(body) });
     const aiData = await aiRes.json();
+    console.log('[AI /command] AI response status:', aiRes.status);
+    console.log('[AI /command] AI response headers:', Object.fromEntries(aiRes.headers.entries()));
     console.log('[AI /command] Response:', aiData);
     if (aiData.error) {
       return res.status(400).json({ reply: aiData.error.message || 'Gre+�ka u AI.' });
