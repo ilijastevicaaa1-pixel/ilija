@@ -1,5 +1,5 @@
 import React from "react";
-import "./manual-entry.css"; // ako imaš CSS
+import "../styles/manual-entry.css"; // ako imaš CSS
 
 function ManualEntryScreen() {
     return (
