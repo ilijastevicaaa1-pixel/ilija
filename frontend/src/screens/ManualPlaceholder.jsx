@@ -1,33 +1,55 @@
 import React from "react";
-import { useParams } from "react-router-dom";
+import { Link } from "react-router-dom";
+import "./manual-entry.css"; // ako imaš CSS za ovaj ekran
 
-const ManualPlaceholder = () => {
-    const { section } = useParams();
+function ManualEntryScreen() {
+    return (
+        <div className="manual-entry-screen">
 
-    const sectionNames = {
-        banka: "Banka",
-        pokladna: "Pokladňa",
-        faktura: "Faktúra",
-        dodavatel: "Dodávateľ",
-        odberatel: "Odberateľ",
-        uctovny- zapis: "Účtovný zápis",
-            dph: "DPH",
-                other: "Ostatné"
-};
+            <button onClick={() => window.history.back()} className="btn-back">
+                ← Späť
+            </button>
 
-const displayName = sectionNames[section] || section;
+            <h1 className="title">✍️ Ručný vstup</h1>
+            <p className="subtitle">Vyberte typ účtovného zápisu:</p>
 
-return (
-    <div className="manual-placeholder-screen">
-        <button onClick={() => window.history.back()} className="btn-back">
-            ← Späť
-        </button>
-        <h1 className="title">🔧 {displayName}</h1>
-        <p className="subtitle">
-            Tento modul je stále vo vývoji. Skoro bude dostupný.
-        </p>
-    </div>
-);
-};
+            <div className="manual-entry-options">
 
-export default ManualPlaceholder;
+                <Link to="/manual-entry/banka" className="manual-entry-btn">
+                    🏦 Banka – ručný zápis
+                </Link>
+
+                <Link to="/manual-entry/pokladna" className="manual-entry-btn">
+                    💰 Pokladňa – ručný zápis
+                </Link>
+
+                <Link to="/manual-entry/faktura" className="manual-entry-btn">
+                    📄 Faktúra – ručný zápis
+                </Link>
+
+                <Link to="/manual-entry/dodavatel" className="manual-entry-btn">
+                    🧾 Dodávateľ – ručný zápis
+                </Link>
+
+                <Link to="/manual-entry/odberatel" className="manual-entry-btn">
+                    👤 Odberateľ – ručný zápis
+                </Link>
+
+                <Link to="/manual-entry/uctovny-zapis" className="manual-entry-btn">
+                    📘 Účtovný zápis
+                </Link>
+
+                <Link to="/manual-entry/dph" className="manual-entry-btn">
+                    🧮 DPH – ručný vstup
+                </Link>
+
+                <Link to="/manual-entry/other" className="manual-entry-btn">
+                    ⚙️ Ostatné
+                </Link>
+
+            </div>
+        </div>
+    );
+}
+
+export default ManualEntryScreen;
