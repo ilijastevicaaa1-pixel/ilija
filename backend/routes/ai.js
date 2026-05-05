@@ -55,17 +55,21 @@ router.post('/command', auth, async (req, res) => {
       return res.json({ reply, context: { state, wizardData } });
     }
 
-    // 2️⃣ PODMENI (broj u kontekstu)
+    // 2️⃣ PODMENI (broj u kontekstu) - DEBUG
     if (state && !state.includes('_')) {
+      console.log('DEBUG PODMENI - state:', state, 'input:', trimmed);
       const submenu = parseMenuNumber(trimmed);
+      console.log('DEBUG submenu:', submenu);
       if (submenu) {
         state = `${state}_${submenu}`;
+        console.log('DEBUG new state:', state);
         userStates.set(userId, state);
         const promptData = getWizardPrompt(state, {});
+        console.log('DEBUG promptData:', promptData);
         if (promptData) {
           return res.json({ reply: promptData.prompt, context: { state, wizardData: promptData.data } });
         }
-        return res.json({ reply: 'State saved. Pošaljite prvú informáciu.' });
+        return res.json({ reply: 'State saved. Pošaljite prvú informáciu. DEBUG: getWizardPrompt vratio null' });
       }
     }
 
