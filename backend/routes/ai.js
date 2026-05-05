@@ -1,85 +1,109 @@
-// AI faktura parser endpoint
 import express from 'express';
-import multer from 'multer';
-import path from 'path';
-import fs from 'fs';
-import nodeFetch from 'node-fetch';
-import { parseFakturaAI } from '../ocr.js';
+import { getDb } from '../db.js';
+import auth from '../authMiddleware.js';
+import { wizardHandlers, getWizardPrompt } from './aiHandlers.js';
 
 const router = express.Router();
-const upload = multer({ dest: path.resolve('uploads/') });
 
-// POST /api/ai/parse-faktura
-router.post('/parse-faktura', upload.single('file'), async (req, res) => {
+// Korisnički stanja (stateful chat)
+const userStates = new Map();
+
+function detectMainCategory(text) {
+  const normalized = text.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+  const num = normalized.match(/\\b([1-9]|10|11)\\b/);
+  if (num) return ['fakturacia', 'banka', 'dph', 'vydavky', 'prijmy', 'reporty', 'dokumenty', 'zakaznici', 'projekty', 'asistent', 'sklad'][parseInt(num[1]) - 1];
+  if (normalized.includes('fakt')) return 'fakturacia';
+  if (normalized.includes('bank')) return 'banka';
+  return null;
+}
+
+function parseMenuNumber(text) {
+  const normalized = text.toLowerCase().replace(/[^\w\s]/g, ' ').replace(/\s+/g, ' ').trim();
+  const numMatch = normalized.match(/\b([1-9])\b/);
+  if (numMatch) return numMatch[1];
+  const words = { jedan: '1', dva: '2', tri: '3', cetiri: '4', pet: '5', sest: '6' };
+  const tokens = normalized.split(' ');
+  for (let token of tokens) if (words[token]) return words[token];
+  return null;
+}
+
+function formatSubmenu(category) {
+  const menus = {
+    fakturacia: '1) Vytváranie faktúr\n2) OCR\n3) DPH výpočet\n4) Odoslanie\n5) Prehľad\n6) Kontrola úhrad',
+    banka: '1) Prehľad zostatku\n2) Transakcie\n3) Párovanie\n4) Import výpisu\n5) Analýza P/V',
+    dph: '1) DPH výpočet\n2) Priznanie\n3) Vstupná/Výstupná\n4) Termíny'
+  };
+  return menus[category] || 'Dostupné možnosti (1-6)';
+}
+
+router.post('/command', auth, async (req, res) => {
   try {
-    if (!req.file) return res.status(400).json({ error: 'Nema fajla.' });
-    const ext = path.extname(req.file.originalname).toLowerCase();
-    if (['.png', '.jpg', '.jpeg'].includes(ext)) {
-      return res.status(400).json({ error: 'AI ne podr++ava slike. Koristi PDF format.' });
-    }
-    if (!['.pdf'].includes(ext)) {
-      return res.status(400).json({ error: 'Nepodr++an format. Koristi PDF.' });
-    }
-    // Pozovi AI OCR logiku
-    const result = await parseFakturaAI(req.file.path);
-    // O-�isti upload
-    fs.unlink(req.file.path, () => {});
-    if (result.error && result.error.includes('model does not support image')) {
-      return res.status(400).json({ error: 'AI model ne podr++ava slike. Koristi PDF format.' });
-    }
-    res.json({ items: result });
-  } catch (e) {
-    console.error('AI parse error:', e);
-    res.status(500).json({ error: e.message || 'Gre+�ka u AI parsiranju.' });
-  }
-});
+    const { text } = req.body;
+    const userId = req.user.id;
 
-// POST /api/ai/command
-const GROQ_API_KEY = process.env.GROQ_API_KEY;
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+    let state = userStates.get(userId) || null;
+    let wizardData = {};
 
-router.post('/command', async (req, res) => {
-  try {
-    const { text, image } = req.body;
-    console.log('[AI /command] Request received:', { hasText: !!text, hasImage: !!image, imageType: typeof image });
-    if (image) {
-      console.log('[AI /command] Image received but blocked');
-      return res.status(400).json({ reply: 'AI asistent trenutno ne podr++ava slike. Koristi tekstualni opis fakture.' });
+    const trimmed = text.trim().toLowerCase();
+
+    // 1️⃣ GLAVNI MENU (1-11)
+    const mainCategory = detectMainCategory(trimmed);
+    if (mainCategory) {
+      state = mainCategory;
+      const reply = `Vybrali ste **${mainCategory}**\n\n${formatSubmenu(mainCategory)}`;
+      userStates.set(userId, state);
+      return res.json({ reply, context: { state, wizardData } });
     }
-    if (!text) {
-      return res.status(400).json({ error: 'Nema teksta.' });
+
+    // 2️⃣ PODMENI (broj u kontekstu)
+    if (state && !state.includes('_')) {
+      const submenu = parseMenuNumber(trimmed);
+      if (submenu) {
+        state = `${state}_${submenu}`;
+        userStates.set(userId, state);
+        const promptData = getWizardPrompt(state);
+        if (promptData) {
+          return res.json({ reply: promptData.prompt, context: { state, wizardData: promptData.data } });
+        }
+        return res.json({ reply: 'State saved. Pošaljite prvú informáciu.' });
+      }
     }
-    const apiKey = GROQ_API_KEY || OPENAI_API_KEY;
-    if (!apiKey) {
-      return res.status(500).json({ error: 'AI klju-� nije konfigurisan.' });
+
+    // 3️⃣ WIZARD KORAK
+    if (state) {
+      const promptData = getWizardPrompt(state, wizardData);
+      if (promptData) {
+        // Sačuvaj podatak
+        const stepName = Object.keys(promptData.data).pop() || promptData.nextStep;
+        wizardData[stepName] = trimmed;
+
+        // Validacija
+        if (promptData.validate && !promptData.validate(trimmed)) {
+          return res.json({ reply: `${promptData.prompt} (neispravan unos)` });
+        }
+
+        userStates.set(userId, promptData.nextStep ? promptData.state : null);
+
+        // Kompletno?
+        if (promptData.nextStep === 'complete') {
+          const db = await getDb();
+          const completeReply = await wizardHandlers[state].complete(wizardData, db);
+          userStates.delete(userId); // Reset
+          return res.json({ reply: completeReply });
+        }
+
+        // Sledeći korak
+        const nextPrompt = getWizardPrompt(promptData.state, wizardData);
+        return res.json({ reply: nextPrompt.prompt, context: { state: nextPrompt.state, wizardData } });
+      }
     }
-    const body = {
-      model: 'llama-3.1-8b-instant',
-      messages: [
-        { role: 'system', content: 'Ty si knjigovodstveny AI asistent. Odpoveda+� kratko a presne na slovensky.' },
-        { role: 'user', content: text }
-      ],
-      temperature: 0.7,
-      max_tokens: 512
-    };
-    const url = GROQ_API_KEY
-      ? 'https://api.groq.com/openai/v1/chat/completions'
-      : 'https://api.openai.com/v1/chat/completions';
-    const headers = {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`
-    };
-    const aiRes = await nodeFetch(url, { method: 'POST', headers, body: JSON.stringify(body) });
-    const aiData = await aiRes.json();
-    console.log('[AI /command] Response:', aiData);
-    if (aiData.error) {
-      return res.status(400).json({ reply: aiData.error.message || 'Gre+�ka u AI.' });
-    }
-    const reply = aiData.choices && aiData.choices[0] && aiData.choices[0].message && aiData.choices[0].message.content;
-    res.json({ reply: reply || 'AI odgovor nije dostupan.' });
-  } catch (e) {
-    console.error('AI command error:', e);
-    res.status(500).json({ error: e.message || 'Gre+�ka u AI.' });
+
+    // 4️⃣ DEFAULT AI
+    res.json({ reply: 'Pišite "1" za fakturáciu, "2" za banku, ili pitajte nešto drugo.' });
+
+  } catch (error) {
+    console.error('AI Command error:', error);
+    res.status(500).json({ reply: 'Greška sistema. Pokušajte ponovo.' });
   }
 });
 

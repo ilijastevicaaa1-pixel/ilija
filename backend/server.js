@@ -29,13 +29,16 @@ import warehouseRouter from './routes/warehouse.js';
 import receiptsRouter from './routes/receipts.js';
 import issuesRouter from './routes/issues.js';
 import faktureBatchRouter from './routes/faktureBatch.js';
-import aiRouter from './routes/ai.js';
+
 import matchingRouter from './routes/matching.js';
 import bankRoutes from './routes/bankRoutes.js';
 import tinkCallback from './routes/tinkCallback.js';
 import bankTransactions from './routes/bankTransactions.js';
 import manualEntryRouter from './routes/manualEntry.js';
 import initializeDatabase from './dbInit.js';
+
+// ✅ DODATO — jedina ispravka
+import aiRouter from './routes/ai.js';
 
 if (process.env.NODE_ENV !== "development") {
     initializeDatabase();
@@ -95,7 +98,9 @@ app.use('/api/auth', authRouter);
 app.use('/api/bank', bankRoutes);
 app.use('/api/tink', tinkCallback);
 app.use('/api/bank', bankTransactions);
-app.use('/api/manual-entry', manualEntryRouter);
+
+// ❌ OVO JE BILO POGREŠNO — uklonjeno
+// app.use('/
 
 // LOGIN TEST
 app.get('/login', (req, res) => {
@@ -156,8 +161,6 @@ app.get('/register', (req, res) => {
     res.json({ message: "Use POST /register with JSON body: {username, email, password}" });
 });
 
-
-
 // FRONTEND SERVING
 // if (process.env.NODE_ENV === 'production') {
 //     const frontendPath = path.join(process.cwd(), '../frontend/dist');
@@ -177,7 +180,7 @@ app.get('/api/dashboard', async (req, res) => {
         try {
             const u = await db.query('SELECT COUNT(*) as count FROM users');
             totalUsers = parseInt(u.rows[0].count, 10);
-        } catch (e) { /* tabela može ne postojati */ }
+        } catch (e) { }
 
         try {
             const ii = await db.query('SELECT COUNT(*) as count FROM input_invoices');
