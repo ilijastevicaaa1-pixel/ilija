@@ -351,14 +351,18 @@ function AssistantChatWindow({ onClose }) {
             return;
         }
 
-        // Ako nismo u kategoriji, onda biramo glavnu kategoriju
-        let categoryFromInput = null;
-        if (!selectedCategory) {
-            categoryFromInput = maybeShowSubOptions(trimmed);
-            if (categoryFromInput && categoryFromInput !== "asistent") {
-                setSelectedCategory(categoryFromInput);
-                setIsSending(false);
-                return;
+        // ✅ BACKEND MODE: Skip frontend logic after category selected
+        if (selectedCategory) {
+            // Category selected → BACKEND wizard takes over
+        } else {
+            let categoryFromInput = null;
+            if (!selectedCategory) {
+                categoryFromInput = maybeShowSubOptions(trimmed);
+                if (categoryFromInput && categoryFromInput !== "asistent") {
+                    setSelectedCategory(categoryFromInput);
+                    setIsSending(false);
+                    return;
+                }
             }
         }
 
