@@ -22,15 +22,15 @@ router.post('/parse-faktura', upload.single('file'), async (req, res) => {
     }
     // Pozovi AI OCR logiku
     const result = await parseFakturaAI(req.file.path);
-    // O-ìisti upload
-    fs.unlink(req.file.path, () => {});
+    // O-ï¿½isti upload
+    fs.unlink(req.file.path, () => { });
     if (result.error && result.error.includes('model does not support image')) {
       return res.status(400).json({ error: 'AI model ne podr++ava slike. Koristi PDF format.' });
     }
     res.json({ items: result });
   } catch (e) {
     console.error('AI parse error:', e);
-    res.status(500).json({ error: e.message || 'Gre+íka u AI parsiranju.' });
+    res.status(500).json({ error: e.message || 'Gre+ï¿½ka u AI parsiranju.' });
   }
 });
 
@@ -51,12 +51,12 @@ router.post('/command', async (req, res) => {
     }
     const apiKey = GROQ_API_KEY || OPENAI_API_KEY;
     if (!apiKey) {
-      return res.status(500).json({ error: 'AI klju-ì nije konfigurisan.' });
+      return res.status(500).json({ error: 'AI klju-ï¿½ nije konfigurisan.' });
     }
     const body = {
       model: 'llama-3.1-8b-instant',
       messages: [
-        { role: 'system', content: 'Ty si knjigovodstveny AI asistent. Odpoveda+í kratko a presne na slovensky.' },
+        { role: 'system', content: 'Ty si knjigovodstveny AI asistent. Odpoveda+ï¿½ kratko a presne na slovensky.' },
         { role: 'user', content: text }
       ],
       temperature: 0.7,
@@ -73,13 +73,15 @@ router.post('/command', async (req, res) => {
     const aiData = await aiRes.json();
     console.log('[AI /command] Response:', aiData);
     if (aiData.error) {
-      return res.status(400).json({ reply: aiData.error.message || 'Gre+íka u AI.' });
+      return res.status(400).json({ reply: aiData.error.message || 'Gre+ï¿½ka u AI.' });
     }
+    console.log("=== AI RAW RESPONSE ===");
+    console.log(aiData);
     const reply = aiData.choices && aiData.choices[0] && aiData.choices[0].message && aiData.choices[0].message.content;
     res.json({ reply: reply || 'AI odgovor nije dostupan.' });
   } catch (e) {
     console.error('AI command error:', e);
-    res.status(500).json({ error: e.message || 'Gre+íka u AI.' });
+    res.status(500).json({ error: e.message || 'Gre+ï¿½ka u AI.' });
   }
 });
 
