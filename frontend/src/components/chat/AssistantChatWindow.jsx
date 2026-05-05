@@ -276,13 +276,7 @@ function AssistantChatWindow({ onClose }) {
         return category;
     };
 
-    const resolveSubOptionReply = (categoryKey, text) => {
-        if (!categoryKey || !subOptions[categoryKey]) return null;
-        const normalizedNumber = parseMenuNumber(text);
-        const direct = normalizedNumber ? subOptions[categoryKey][normalizedNumber] : null;
-        if (!direct) return null;
-        return `Rozumiem. Zvolili ste: ${direct}. Pokracujte, prosim, dalsim pokynom.`;
-    };
+    const resolveSubOptionReply = (categoryKey, text) => null; // BACKEND MODE - all to backend
 
     const isMainMenuCommand = (text) => {
         const t = text.toLowerCase().trim();
