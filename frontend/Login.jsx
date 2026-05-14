@@ -1,5 +1,5 @@
-import { useState } from "react";
-import axios from "axios";
+﻿import { useState } from "react";
+import { apiFetch } from "../src/api/apiFetch";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -13,15 +13,16 @@ export default function Login() {
     setError("");
 
     try {
-      const res = await axios.post("http://localhost:3001/api/login", {
-        email,
-        password
+      const res = await apiFetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password })
       });
 
       localStorage.setItem("jwt", res.data.token);
       window.location.href = "/dashboard";
     } catch (err) {
-      "Pogrešan email/lozinka. Test: ilijastevicaaa1@gmail.com / 123456"
+      setError("Pogrešan email/lozinka. Test: ilijastevicaaa1@gmail.com / 123456");
     }
 
     setLoading(false);
