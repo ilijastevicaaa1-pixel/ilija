@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { apiFetch } from "../../api.js";
 
-
 const greeting =
     "Dobrý deň...\n\n" +
     "Ako vám môžem pomôcť?\n\n" +
@@ -18,7 +17,6 @@ const greeting =
     "10) Asistent\n" +
     "11) Skladové hospodárstvo\n\n" +
     "Prosím, vyberte si jednu z možností (napíšte číslo).";
-
 
 const subOptions = {
     fakturacia: {
@@ -96,7 +94,6 @@ function parseMenuNumber(text) {
     const normalized = normalizeText(text).replace(/[^\w\s]/g, " ");
     const compact = normalized.replace(/\s+/g, " ").trim();
 
-    // If there is a direct number in the text, use it
     const numberMatch = compact.match(/\b([1-9]|10|11)\b/);
     if (numberMatch) return numberMatch[1];
 
@@ -104,7 +101,6 @@ function parseMenuNumber(text) {
     const joined = tokens.join("");
 
     const wordMap = {
-        // SR
         jedan: "1",
         jedna: "1",
         jedno: "1",
@@ -118,9 +114,7 @@ function parseMenuNumber(text) {
         devet: "9",
         deset: "10",
         jedanaest: "11",
-        // SK
         jeden: "1",
-        jedna_sk: "1",
         dve: "2",
         styri: "4",
         pat: "5",
@@ -184,7 +178,7 @@ function AssistantChatWindow({ onClose }) {
     const [isSending, setIsSending] = useState(false);
     const [isListening, setIsListening] = useState(false);
     const [speechError, setSpeechError] = useState("");
-    const [context, setContext] = useState({});
+    const [context, setContext] = useState(null);
 
     const listRef = useRef(null);
     const recognitionRef = useRef(null);
@@ -244,7 +238,6 @@ function AssistantChatWindow({ onClose }) {
         window.speechSynthesis.cancel();
         window.speechSynthesis.speak(utterance);
 
-        // If browser blocks autoplay, queue may stay empty after speak()
         if (text === greeting) {
             setTimeout(() => {
                 if (!window.speechSynthesis.speaking && !window.speechSynthesis.pending) {
@@ -290,7 +283,6 @@ function AssistantChatWindow({ onClose }) {
 
             if (!window.speechSynthesis || typeof window.SpeechSynthesisUtterance === "undefined") return;
 
-            // "Warm up" speech engine after first user interaction
             const warmup = new window.SpeechSynthesisUtterance("");
             window.speechSynthesis.speak(warmup);
             window.speechSynthesis.cancel();
@@ -315,20 +307,20 @@ function AssistantChatWindow({ onClose }) {
 
         if (isMainMenuCommand(trimmed)) {
             setSelectedCategory(null);
+            setContext(null);
             setMessages((prev) => [...prev, { role: "assistant", text: greeting }]);
             speak(greeting);
             setIsSending(false);
             return;
         }
 
-        // Ako je kategorija vec izabrana, broj 1..n tumaci kao podopciju te kategorije
         const activeCategory = selectedCategory;
         const fixedReply = resolveSubOptionReply(activeCategory, trimmed);
         if (fixedReply) {
             setMessages((prev) => [...prev, { role: "assistant", text: fixedReply }]);
             speak(fixedReply);
 
-            if (activeCategory === "fakturacia" && (trimmed === "2" || trimmed.includes("ocr"))) {
+            if (activeCategory === "fakturacia" && (trimmed === "2" || trimmed.toLowerCase().includes("ocr"))) {
                 setTimeout(() => fileInputRef.current?.click(), 250);
             }
 
@@ -336,7 +328,6 @@ function AssistantChatWindow({ onClose }) {
             return;
         }
 
-        // Ako je korisnik u kategoriji i izgovori broj/rec broja van opsega, vrati ga u meni kategorije.
         if (activeCategory && parseMenuNumber(trimmed)) {
             const retryMessage = formatSubOptions(activeCategory);
             setMessages((prev) => [...prev, { role: "assistant", text: retryMessage }]);
@@ -345,7 +336,6 @@ function AssistantChatWindow({ onClose }) {
             return;
         }
 
-        // Ako nismo u kategoriji, onda biramo glavnu kategoriju
         let categoryFromInput = null;
         if (!selectedCategory) {
             categoryFromInput = maybeShowSubOptions(trimmed);
@@ -366,7 +356,9 @@ function AssistantChatWindow({ onClose }) {
             setMessages((prev) => [...prev, { role: "assistant", text: reply }]);
             speak(reply);
 
-            if (data.context) setContext(data.context);
+            if (data.context) {
+                setContext(data.context);
+            }
 
             if (
                 (selectedCategory === "fakturacia" || categoryFromInput === "fakturacia") &&
@@ -388,7 +380,6 @@ function AssistantChatWindow({ onClose }) {
 
     const toggleSpeech = () => {
         setSpeechError("");
-        // Kada korisnik ukljuci mikrofon, asistent prestaje da cita naglas.
         window.speechSynthesis?.cancel();
 
         if (!SpeechRecognitionApi) {
@@ -418,7 +409,6 @@ function AssistantChatWindow({ onClose }) {
             if (transcript) {
                 lastTranscriptRef.current = "";
                 setInput(transcript);
-                // Posalji automatski ono sto je korisnik izgovorio.
                 sendMessage(transcript);
             }
         };
@@ -450,14 +440,22 @@ function AssistantChatWindow({ onClose }) {
                             <h3>Asistent</h3>
                             <p>Slovensko + srpski</p>
                         </div>
-                        <button type="button" className="modern-chat-close" onClick={onClose} aria-label="Zatvori chat">
+                        <button
+                            type="button"
+                            className="modern-chat-close"
+                            onClick={onClose}
+                            aria-label="Zatvori chat"
+                        >
                             ×
                         </button>
                     </header>
 
                     <div className="modern-chat-messages" ref={listRef}>
                         {messages.map((message, index) => (
-                            <div key={`${message.role}-${index}`} className={`chat-bubble ${message.role}`}>
+                            <div
+                                key={`${message.role}-${index}`}
+                                className={`chat-bubble ${message.role}`}
+                            >
                                 {message.text}
                             </div>
                         ))}
@@ -507,7 +505,9 @@ function AssistantChatWindow({ onClose }) {
                             →
                         </button>
                     </footer>
-                    {speechError && <p className="modern-chat-speech-error">{speechError}</p>}
+                    {speechError && (
+                        <p className="modern-chat-speech-error">{speechError}</p>
+                    )}
                 </section>
             </div>
         </>
