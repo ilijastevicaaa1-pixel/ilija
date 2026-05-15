@@ -94,13 +94,18 @@ app.use('/api/matching', matchingRouter);
 
 // AI routing sanity log (da vidimo da request stiže do backend-a)
 app.use('/api/ai', (req, res, next) => {
-    if (req.path === '/command') {
-        console.log('[AI ROUTE] Hit: /api/ai/command');
-    }
+    console.log('[AI ROUTE MW]', { fullPath: req.originalUrl, path: req.path, method: req.method });
     next();
 });
 
 app.use('/api/ai', aiRouter);
+
+// Fallback error handler for debugging 500s
+app.use((err, req, res, next) => {
+    console.error('[EXPRESS ERROR]', err);
+    res.status(500).json({ error: err?.message || 'Internal error' });
+});
+
 app.use('/api', loginRouter);
 app.use('/api/auth', authRouter);
 
