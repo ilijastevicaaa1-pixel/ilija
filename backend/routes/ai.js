@@ -104,15 +104,36 @@ router.post('/command', async (req, res) => {
       preview: text.substring(0, 100) + '...'
     });
 
+    let aiData;
+
     const aiRes = await nodeFetch(url, {
       method: 'POST',
       headers,
       body: JSON.stringify(body)
     });
 
-    const aiData = await aiRes.json();
+    // Loguj raw telo da vidimo da li je response JSON i da li ima choices
+    const rawText = await aiRes.text();
 
-    console.log('[AI /command] Response:', aiData);
+    try {
+      aiData = rawText ? JSON.parse(rawText) : {};
+    } catch {
+      aiData = { raw: rawText };
+    }
+
+    console.log('[AI /command] HTTP STATUS:', aiRes.status);
+    console.log('[AI /command] RAW RESPONSE:', rawText);
+    console.log('[AI /command] Parsed JSON:', aiData);
+
+    if (!aiData || !aiData.choices) {
+      console.error('[AI /command] choices missing. Full parsed response:', aiData);
+    }
+
+    if (aiRes && !aiRes.ok) {
+      console.error('[AI /command] Non-OK response status:', aiRes.status, 'body:', rawText);
+    }
+
+
 
     if (aiData.error) {
       return res.status(400).json({ reply: aiData.error.message || 'Greška u AI.' });
