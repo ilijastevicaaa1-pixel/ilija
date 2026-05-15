@@ -357,6 +357,8 @@ function AssistantChatWindow({ onClose }) {
             speak(reply);
 
             if (data.context) {
+                // Ako AI vrati novi kontekst, ažuriraj.
+                // Ako ne vrati (npr. slobodan tekst -> "Rozumiem."), zadrži postojeći state.
                 setContext(data.context);
             }
 
