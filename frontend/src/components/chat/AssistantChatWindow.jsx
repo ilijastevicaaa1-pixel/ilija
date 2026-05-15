@@ -306,6 +306,7 @@ function AssistantChatWindow({ onClose }) {
         setIsSending(true);
 
         if (isMainMenuCommand(trimmed)) {
+            // Reset state ONLY for explicit menu commands
             setSelectedCategory(null);
             setContext(null);
             setMessages((prev) => [...prev, { role: "assistant", text: greeting }]);
