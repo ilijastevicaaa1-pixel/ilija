@@ -50,14 +50,26 @@ router.post('/command', async (req, res) => {
 
     console.log('[AI /command] FULL REQUEST BODY:', req.body);
 
+    console.log('[AI /command] text/context presence:', {
+      hasText: typeof text === 'string' && text.trim().length > 0,
+      hasContext: !!context
+    });
+
     if (!text) {
       return res.status(400).json({ error: 'Nema teksta.' });
     }
 
     const apiKey = GROQ_API_KEY || OPENAI_API_KEY;
+    console.log('[AI /command] apiKey config:', {
+      GROQ_API_KEY_set: !!GROQ_API_KEY,
+      OPENAI_API_KEY_set: !!OPENAI_API_KEY,
+      usingGroq: !!GROQ_API_KEY
+    });
+
     if (!apiKey) {
       return res.status(500).json({ error: 'AI ključ nije konfigurisan.' });
     }
+
 
     // ===============================
     //  PRIPREMA PORUKA SA KONTEKSTOM
