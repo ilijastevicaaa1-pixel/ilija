@@ -36,10 +36,14 @@ import tinkCallback from './routes/tinkCallback.js';
 import bankTransactions from './routes/bankTransactions.js';
 import manualEntryRouter from './routes/manualEntry.js';
 import initializeDatabase from './dbInit.js';
+import { vercelTouch } from './vercel-touch.js';
 
 if (process.env.NODE_ENV !== "development") {
     initializeDatabase();
 }
+
+// Vercel rebuild hook (no-op)
+vercelTouch();
 
 const app = express();
 
