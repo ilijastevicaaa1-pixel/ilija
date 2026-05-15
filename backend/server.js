@@ -91,9 +91,19 @@ app.get("/import-sql", async (req, res) => {
 app.use('/api/upload/pdf', pdfUploadRouter);
 app.use('/api/upload/bank', bankUploadRouter);
 app.use('/api/matching', matchingRouter);
+
+// AI routing sanity log (da vidimo da request stiže do backend-a)
+app.use('/api/ai', (req, res, next) => {
+    if (req.path === '/command') {
+        console.log('[AI ROUTE] Hit: /api/ai/command');
+    }
+    next();
+});
+
 app.use('/api/ai', aiRouter);
 app.use('/api', loginRouter);
 app.use('/api/auth', authRouter);
+
 
 // TINK BANK INTEGRATION
 app.use('/api/bank', bankRoutes);
