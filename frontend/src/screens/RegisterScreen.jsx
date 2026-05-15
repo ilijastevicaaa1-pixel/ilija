@@ -18,7 +18,7 @@ export default function RegisterScreen() {
         setError("");
 
         try {
-            const data = await apiFetch("/api/auth/register", {
+            const data = await apiFetch("/register", {
                 method: "POST",
                 body: { company, email, password }
             });
