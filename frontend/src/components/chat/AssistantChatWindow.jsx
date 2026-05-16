@@ -318,16 +318,11 @@ function AssistantChatWindow({ onClose }) {
         const activeCategory = selectedCategory;
         const fixedReply = resolveSubOptionReply(activeCategory, trimmed);
         if (fixedReply) {
-            setMessages((prev) => [...prev, { role: "assistant", text: fixedReply }]);
-            speak(fixedReply);
-
-            if (activeCategory === "fakturacia" && (trimmed === "2" || trimmed.toLowerCase().includes("ocr"))) {
-                setTimeout(() => fileInputRef.current?.click(), 250);
-            }
-
-            setIsSending(false);
-            return;
+            // Uvek pozovi LLM (da bi se stvarno koristila "llama" logika na svakoj poruci)
+            // ali zadrži postojeći context/odabranu kategoriju.
+            // (Rule-based reply ne brišemo, samo ga prikazujemo tek nakon LLM-a, ako LLM ne vrati ništa.)
         }
+
 
         if (activeCategory && parseMenuNumber(trimmed)) {
             const retryMessage = formatSubOptions(activeCategory);
