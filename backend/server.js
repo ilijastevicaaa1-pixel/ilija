@@ -1,5 +1,6 @@
-import dotenv from "dotenv";
-dotenv.config();
+// import dotenv from "dotenv";
+// dotenv.config();
+
 
 import express from 'express';
 import cors from 'cors';
@@ -98,7 +99,77 @@ app.use('/api/ai', (req, res, next) => {
     next();
 });
 
+// Jasna poruka kada frontend pogrešno pozove GET umesto POST
+app.get('/api/ai/command', (req, res) => {
+    return res.status(405).json({
+        error: 'Method Not Allowed. Use POST /api/ai/command',
+        method: req.method,
+        path: req.path
+    });
+});
+
+// AI COMMAND — direktno na /api/ai/command (Render)
+app.post('/api/ai/command', async (req, res) => {
+    console.log('AI REQUEST BODY:', req.body);
+
+    const payload = {
+        model: 'llama3.2',
+        messages: [{ role: 'user', content: req?.body?.text }]
+    };
+
+    try {
+        if (!process.env.LLAMA_URL) {
+            return res.status(500).json({ error: 'LLAMA_URL is not configured' });
+        }
+        if (!process.env.LLAMA_API_KEY) {
+            return res.status(500).json({ error: 'LLAMA_API_KEY is not configured' });
+        }
+
+        const llamaRes = await fetch(process.env.LLAMA_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${process.env.LLAMA_API_KEY}`
+            },
+            body: JSON.stringify(payload)
+        });
+
+        console.log('AI HTTP STATUS:', llamaRes.status);
+
+        const rawText = await llamaRes.text();
+        console.log('AI RAW RESPONSE:', rawText);
+
+        let data;
+        try {
+            data = rawText ? JSON.parse(rawText) : {};
+        } catch (e) {
+            console.error('AI JSON PARSE ERROR:', e);
+            return res.status(500).json({ error: 'Invalid JSON from AI' });
+        }
+
+        // OpenAI-kompatibilan format + fallbackovi
+        const reply =
+            data?.choices?.[0]?.message?.content ||
+            data?.choices?.[0]?.text ||
+            data?.output ||
+            data?.response ||
+            null;
+
+        if (!reply) {
+            console.error('AI ERROR: No reply field found', data);
+            return res.status(500).json({ error: 'AI response missing content' });
+        }
+
+        return res.json({ reply });
+    } catch (err) {
+        console.error('AI FETCH FAILED:', err);
+        return res.status(500).json({ error: 'AI fetch failed' });
+    }
+});
+
 app.use('/api/ai', aiRouter);
+
+
 
 // Fallback error handler for debugging 500s
 app.use((err, req, res, next) => {
