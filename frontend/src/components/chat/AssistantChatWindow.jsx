@@ -326,11 +326,11 @@ function AssistantChatWindow({ onClose }) {
 
         if (activeCategory && parseMenuNumber(trimmed)) {
             const retryMessage = formatSubOptions(activeCategory);
+            // Ne return-uj: AI poziv mora uvek da ide.
             setMessages((prev) => [...prev, { role: "assistant", text: retryMessage }]);
             speak(retryMessage);
-            setIsSending(false);
-            return;
         }
+
 
         let categoryFromInput = null;
         if (!selectedCategory) {
