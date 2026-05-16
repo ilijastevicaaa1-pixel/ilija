@@ -113,7 +113,8 @@ app.post('/api/ai/command', async (req, res) => {
     console.log('AI REQUEST BODY:', req.body);
 
     const payload = {
-        model: 'llama3.2',
+        model: 'llama-3.1-8b-instant',
+
         messages: [{ role: 'user', content: req?.body?.text }]
     };
 
