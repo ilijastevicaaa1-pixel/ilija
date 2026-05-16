@@ -1,5 +1,11 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, {
+    useEffect,
+    useMemo,
+    useRef,
+    useState
+} from "react";
 import { apiFetch } from "../../api.js";
+import AIExtractionModal from "../AIExtractionModal.jsx";
 
 const greeting =
     "Dobrý deň...\n\n" +
@@ -25,63 +31,80 @@ const subOptions = {
         "3": "vypocet DPH",
         "4": "odosielanie faktur",
         "5": "prehlad vsetkych faktur",
-        "6": "kontrola stavu uhrad",
+        "6": "kontrola stavu uhrad"
     },
     banka: {
         "1": "prehlad zostatku",
         "2": "prehlad transakcii",
         "3": "parovanie platieb",
         "4": "import bankoveho vypisu",
-        "5": "analyza prijmov a vydavkov",
+        "5": "analyza prijmov a vydavkov"
     },
     dph: {
         "1": "vypocet DPH",
         "2": "priprava DPH priznania",
         "3": "prehlad vstupnej a vystupnej DPH",
-        "4": "upozornenia na terminy",
+        "4": "upozornenia na terminy"
     },
     vydavky: {
         "1": "zadavanie vydavkov",
         "2": "OCR blockov",
         "3": "kategorizacia vydavkov",
-        "4": "priradenie vydavkov k projektom",
+        "4": "priradenie vydavkov k projektom"
     },
     prijmy: {
         "1": "prehlad prijmov",
         "2": "analyza podla klientov",
-        "3": "mesacne prehlady",
+        "3": "mesacne prehlady"
     },
     reporty: {
         "1": "mesacny financny prehlad",
         "2": "zisk/strata",
         "3": "cashflow",
-        "4": "porovnanie obdobi",
+        "4": "porovnanie obdobi"
     },
     dokumenty: {
         "1": "nahravanie dokumentov",
         "2": "OCR spracovanie",
         "3": "automaticke rozpoznanie typu dokumentu",
-        "4": "archiv dokumentov",
+        "4": "archiv dokumentov"
     },
     zakaznici: {
         "1": "pridavanie zakaznikov",
         "2": "prehlad historie",
-        "3": "automaticke doplnanie udajov do faktur",
+        "3": "automaticke doplnanie udajov do faktur"
     },
     projekty: {
         "1": "vydavky podla projektu",
         "2": "prijmy podla projektu",
-        "3": "analyza ziskovosti",
+        "3": "analyza ziskovosti"
     },
     sklad: {
         "1": "stav skladu",
         "2": "prijem tovaru",
         "3": "vydaj tovaru",
         "4": "inventura",
-        "5": "prehlad pohybov",
-    },
+        "5": "prehlad pohybov"
+    }
 };
 
+// ---------- TTS ----------
+function speak(text) {
+    if (!window.speechSynthesis || typeof window.SpeechSynthesisUtterance === "undefined") return;
+    window.speechSynthesis.cancel();
+    const u = new window.SpeechSynthesisUtterance(text);
+    u.lang = "sk-SK";
+    const voices = window.speechSynthesis.getVoices();
+    let voice =
+        voices.find(v => v.lang.startsWith("sk")) ||
+        voices.find(v => v.lang.startsWith("cs")) ||
+        voices.find(v => v.lang.startsWith("en")) ||
+        voices[0];
+    if (voice) u.voice = voice;
+    window.speechSynthesis.speak(u);
+}
+
+// ---------- Helpers ----------
 function normalizeText(value) {
     return (value || "")
         .toLowerCase()
@@ -101,7 +124,7 @@ function parseMenuNumber(text) {
     const joined = tokens.join("");
 
     const wordMap = {
-        jedan: "1",
+        jeden: "1",
         jedna: "1",
         jedno: "1",
         dva: "2",
@@ -114,7 +137,6 @@ function parseMenuNumber(text) {
         devet: "9",
         deset: "10",
         jedanaest: "11",
-        jeden: "1",
         dve: "2",
         styri: "4",
         pat: "5",
@@ -123,7 +145,7 @@ function parseMenuNumber(text) {
         osem: "8",
         devat: "9",
         desat: "10",
-        jedenast: "11",
+        jedenast: "11"
     };
 
     for (const token of tokens) {
@@ -139,6 +161,7 @@ function parseMenuNumber(text) {
 function detectCategory(text) {
     const t = normalizeText(text);
     const menuNumber = parseMenuNumber(text);
+
     if (menuNumber === "1") return "fakturacia";
     if (menuNumber === "2") return "banka";
     if (menuNumber === "3") return "dph";
@@ -150,6 +173,7 @@ function detectCategory(text) {
     if (menuNumber === "9") return "projekty";
     if (menuNumber === "10") return "asistent";
     if (menuNumber === "11") return "sklad";
+
     if (t.includes("fakt")) return "fakturacia";
     if (t.includes("bank")) return "banka";
     if (t.includes("dph") || t.includes("dan")) return "dph";
@@ -161,6 +185,7 @@ function detectCategory(text) {
     if (t.includes("projekt")) return "projekty";
     if (t.includes("asist")) return "asistent";
     if (t.includes("sklad")) return "sklad";
+
     return null;
 }
 
@@ -171,8 +196,28 @@ function formatSubOptions(categoryKey) {
     return `Vybrali ste: ${categoryKey}\nDostupne moznosti:\n${lines.join("\n")}`;
 }
 
+function resolveSubOptionReply(categoryKey, text) {
+    if (!categoryKey || !subOptions[categoryKey]) return null;
+    const normalizedNumber = parseMenuNumber(text);
+    const direct = normalizedNumber ? subOptions[categoryKey][normalizedNumber] : null;
+    if (!direct) return null;
+    return `Rozumiem. Zvolili ste: ${direct}. Pokračujte, prosím, ďalším pokynom.`;
+}
+
+function isMainMenuCommand(text) {
+    const t = text.toLowerCase().trim();
+    return (
+        t === "menu" ||
+        t === "hlavne menu" ||
+        t === "spat" ||
+        t === "spat na menu"
+    );
+}
+
 function AssistantChatWindow({ onClose }) {
-    const [messages, setMessages] = useState([{ role: "assistant", text: greeting }]);
+    const [messages, setMessages] = useState([
+        { role: "assistant", text: greeting }
+    ]);
     const [input, setInput] = useState("");
     const [selectedCategory, setSelectedCategory] = useState(null);
     const [isSending, setIsSending] = useState(false);
@@ -180,10 +225,12 @@ function AssistantChatWindow({ onClose }) {
     const [speechError, setSpeechError] = useState("");
     const [context, setContext] = useState(null);
 
+    const [showExtractionModal, setShowExtractionModal] = useState(false);
+    const [extractedData, setExtractedData] = useState(null);
+
     const listRef = useRef(null);
     const recognitionRef = useRef(null);
     const fileInputRef = useRef(null);
-    const voicesRef = useRef([]);
     const hasSpokenGreetingRef = useRef(false);
     const needsGreetingRetryRef = useRef(false);
     const hasUnlockedAudioRef = useRef(false);
@@ -194,11 +241,13 @@ function AssistantChatWindow({ onClose }) {
         []
     );
 
+    // Scroll
     useEffect(() => {
         if (!listRef.current) return;
         listRef.current.scrollTop = listRef.current.scrollHeight;
     }, [messages, isSending]);
 
+    // Cleanup
     useEffect(() => {
         return () => {
             if (recognitionRef.current) recognitionRef.current.stop();
@@ -206,76 +255,18 @@ function AssistantChatWindow({ onClose }) {
         };
     }, []);
 
-    useEffect(() => {
-        const loadVoices = () => {
-            voicesRef.current = window.speechSynthesis?.getVoices?.() || [];
-        };
-
-        loadVoices();
-        window.speechSynthesis?.addEventListener?.("voiceschanged", loadVoices);
-        return () => window.speechSynthesis?.removeEventListener?.("voiceschanged", loadVoices);
-    }, []);
-
-    const speak = (text) => {
-        if (!text || !window.speechSynthesis || typeof window.SpeechSynthesisUtterance === "undefined") return;
-
-        const utterance = new window.SpeechSynthesisUtterance(text);
-        const voices = voicesRef.current;
-        const preferredVoice =
-            voices.find((voice) => voice.lang?.toLowerCase().startsWith("sk")) ||
-            voices.find((voice) => voice.lang?.toLowerCase().startsWith("cs")) ||
-            voices.find((voice) => voice.lang?.toLowerCase().startsWith("sr"));
-
-        if (preferredVoice) utterance.voice = preferredVoice;
-        utterance.lang = preferredVoice?.lang || "sk-SK";
-        utterance.rate = 1;
-        utterance.pitch = 1;
-
-        utterance.onerror = () => {
-            if (text === greeting) needsGreetingRetryRef.current = true;
-        };
-
-        window.speechSynthesis.cancel();
-        window.speechSynthesis.speak(utterance);
-
-        if (text === greeting) {
-            setTimeout(() => {
-                if (!window.speechSynthesis.speaking && !window.speechSynthesis.pending) {
-                    needsGreetingRetryRef.current = true;
-                }
-            }, 120);
-        }
-    };
-
-    const maybeShowSubOptions = (text) => {
-        const category = detectCategory(text);
-        if (!category || category === "asistent") return category;
-
-        const optionMessage = formatSubOptions(category);
-        setMessages((prev) => [...prev, { role: "assistant", text: optionMessage }]);
-        speak(optionMessage);
-        return category;
-    };
-
-    const resolveSubOptionReply = (categoryKey, text) => {
-        if (!categoryKey || !subOptions[categoryKey]) return null;
-        const normalizedNumber = parseMenuNumber(text);
-        const direct = normalizedNumber ? subOptions[categoryKey][normalizedNumber] : null;
-        if (!direct) return null;
-        return `Rozumiem. Zvolili ste: ${direct}. Pokracujte, prosim, dalsim pokynom.`;
-    };
-
-    const isMainMenuCommand = (text) => {
-        const t = text.toLowerCase().trim();
-        return t === "menu" || t === "hlavne menu" || t === "spat" || t === "spat na menu";
-    };
-
+    // Greeting TTS
     useEffect(() => {
         if (hasSpokenGreetingRef.current) return;
         hasSpokenGreetingRef.current = true;
-        speak(greeting);
+        try {
+            speak(greeting);
+        } catch {
+            needsGreetingRetryRef.current = true;
+        }
     }, []);
 
+    // Unlock audio on first gesture
     useEffect(() => {
         const unlockAudioOnFirstGesture = () => {
             if (hasUnlockedAudioRef.current) return;
@@ -297,19 +288,64 @@ function AssistantChatWindow({ onClose }) {
         return () => window.removeEventListener("pointerdown", unlockAudioOnFirstGesture);
     }, []);
 
+    // OCR upload + AI extraction
+    const handleFileUpload = async (event) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        setMessages(prev => [
+            ...prev,
+            { role: "user", text: `Učitan fajl: ${file.name}` }
+        ]);
+
+        const formData = new FormData();
+        formData.append("file", file);
+
+        try {
+            const data = await apiFetch("/api/ocr", {
+                method: "POST",
+                body: formData
+            });
+
+            const text = data.ocrText || "Nepodarilo sa načítať dokument.";
+            setMessages(prev => [...prev, { role: "assistant", text }]);
+            speak(text);
+
+            try {
+                const aiData = await apiFetch("/api/ai/extract", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ text })
+                });
+
+                setExtractedData({
+                    fields: aiData.fields || {},
+                    rawText: text
+                });
+                setShowExtractionModal(true);
+            } catch (err) {
+                console.error("AI extrakcia zlyhala", err);
+            }
+        } catch (err) {
+            const errorMessage = "OCR zlyhalo.";
+            setMessages(prev => [...prev, { role: "assistant", text: errorMessage }]);
+            speak(errorMessage);
+        }
+    };
+
     const sendMessage = async (textOverride) => {
         const trimmed = (typeof textOverride === "string" ? textOverride : input).trim();
         if (!trimmed || isSending) return;
 
-        setMessages((prev) => [...prev, { role: "user", text: trimmed }]);
+        setMessages(prev => [...prev, { role: "user", text: trimmed }]);
         setInput("");
         setIsSending(true);
 
+        // Reset na glavni meni
         if (isMainMenuCommand(trimmed)) {
-            // Reset state ONLY for explicit menu commands
             setSelectedCategory(null);
             setContext(null);
-            setMessages((prev) => [...prev, { role: "assistant", text: greeting }]);
+            setMessages(prev => [...prev, { role: "assistant", text: greeting }]);
             speak(greeting);
             setIsSending(false);
             return;
@@ -317,25 +353,28 @@ function AssistantChatWindow({ onClose }) {
 
         const activeCategory = selectedCategory;
         const fixedReply = resolveSubOptionReply(activeCategory, trimmed);
+
+        // Ako je izabrana podopcija, prikaži info + ipak zovi AI
         if (fixedReply) {
-            // Uvek pozovi LLM (da bi se stvarno koristila "llama" logika na svakoj poruci)
-            // ali zadrži postojeći context/odabranu kategoriju.
-            // (Rule-based reply ne brišemo, samo ga prikazujemo tek nakon LLM-a, ako LLM ne vrati ništa.)
+            setMessages(prev => [...prev, { role: "assistant", text: fixedReply }]);
+            speak(fixedReply);
         }
 
-
+        // Ako je već izabrana kategorija i korisnik unosi broj, ponovo pokaži podmeni
         if (activeCategory && parseMenuNumber(trimmed)) {
             const retryMessage = formatSubOptions(activeCategory);
-            // Ne return-uj: AI poziv mora uvek da ide.
-            setMessages((prev) => [...prev, { role: "assistant", text: retryMessage }]);
+            setMessages(prev => [...prev, { role: "assistant", text: retryMessage }]);
             speak(retryMessage);
         }
 
-
+        // Ako još nema kategorije, probaj da je detektuješ i prikažeš podmeni
         let categoryFromInput = null;
         if (!selectedCategory) {
-            categoryFromInput = maybeShowSubOptions(trimmed);
+            categoryFromInput = detectCategory(trimmed);
             if (categoryFromInput && categoryFromInput !== "asistent") {
+                const optionMessage = formatSubOptions(categoryFromInput);
+                setMessages(prev => [...prev, { role: "assistant", text: optionMessage }]);
+                speak(optionMessage);
                 setSelectedCategory(categoryFromInput);
                 setIsSending(false);
                 return;
@@ -345,31 +384,27 @@ function AssistantChatWindow({ onClose }) {
         try {
             const data = await apiFetch("/api/ai/command", {
                 method: "POST",
-                body: { text: trimmed, context },
+                body: { text: trimmed, context }
             });
 
             const reply = data.reply || data.answer || "Rozumiem.";
-            setMessages((prev) => [...prev, { role: "assistant", text: reply }]);
+            setMessages(prev => [...prev, { role: "assistant", text: reply }]);
             speak(reply);
 
             if (data.context) {
-                // Ako AI vrati novi kontekst, ažuriraj.
-                // Ako ne vrati (npr. slobodan tekst -> "Rozumiem."), zadrži postojeći state.
                 setContext(data.context);
             }
 
+            const cat = selectedCategory || categoryFromInput;
             if (
-                (selectedCategory === "fakturacia" || categoryFromInput === "fakturacia") &&
+                (cat === "fakturacia") &&
                 (trimmed === "2" || trimmed.toLowerCase().includes("ocr"))
             ) {
                 setTimeout(() => fileInputRef.current?.click(), 250);
             }
-        } catch {
+        } catch (err) {
             const errorMessage = "Vyskytla sa chyba pri komunikacii so serverom.";
-            setMessages((prev) => [
-                ...prev,
-                { role: "assistant", text: errorMessage },
-            ]);
+            setMessages(prev => [...prev, { role: "assistant", text: errorMessage }]);
             speak(errorMessage);
         } finally {
             setIsSending(false);
@@ -412,7 +447,7 @@ function AssistantChatWindow({ onClose }) {
         };
         recognition.onresult = (event) => {
             const transcript = Array.from(event.results)
-                .map((result) => result[0]?.transcript || "")
+                .map(result => result[0]?.transcript || "")
                 .join(" ");
             lastTranscriptRef.current = transcript.trim();
             setInput(lastTranscriptRef.current);
@@ -431,8 +466,16 @@ function AssistantChatWindow({ onClose }) {
     return (
         <>
             <link rel="stylesheet" href="/src/styles/chat-modern.css" />
-            <div className="modern-chat-overlay" role="dialog" aria-modal="true" onClick={onClose}>
-                <section className="modern-chat-panel" onClick={(e) => e.stopPropagation()}>
+            <div
+                className="modern-chat-overlay"
+                role="dialog"
+                aria-modal="true"
+                onClick={onClose}
+            >
+                <section
+                    className="modern-chat-panel"
+                    onClick={(e) => e.stopPropagation()}
+                >
                     <header className="modern-chat-header">
                         <div>
                             <h3>Asistent</h3>
@@ -457,7 +500,9 @@ function AssistantChatWindow({ onClose }) {
                                 {message.text}
                             </div>
                         ))}
-                        {isSending && <div className="chat-bubble assistant">Asistent pise...</div>}
+                        {isSending && (
+                            <div className="chat-bubble assistant">Asistent píše...</div>
+                        )}
                     </div>
 
                     <input
@@ -465,14 +510,7 @@ function AssistantChatWindow({ onClose }) {
                         ref={fileInputRef}
                         style={{ display: "none" }}
                         accept="image/*,.pdf"
-                        onChange={(event) => {
-                            if (event.target.files?.[0]) {
-                                setMessages((prev) => [
-                                    ...prev,
-                                    { role: "user", text: `Učitan fajl: ${event.target.files[0].name}` },
-                                ]);
-                            }
-                        }}
+                        onChange={handleFileUpload}
                     />
 
                     <footer className="modern-chat-input-row">
@@ -490,7 +528,7 @@ function AssistantChatWindow({ onClose }) {
                             value={input}
                             onChange={(event) => setInput(event.target.value)}
                             onKeyDown={onInputKeyDown}
-                            placeholder="Piši poruku ili komandu (npr. 1 za fakturaciju)..."
+                            placeholder="Piši poruku ili komandu (npr. 1 za fakturáciu)..."
                             rows={1}
                             disabled={isSending}
                         />
@@ -503,11 +541,22 @@ function AssistantChatWindow({ onClose }) {
                             →
                         </button>
                     </footer>
+
                     {speechError && (
                         <p className="modern-chat-speech-error">{speechError}</p>
                     )}
                 </section>
             </div>
+
+            <AIExtractionModal
+                open={showExtractionModal}
+                data={extractedData}
+                onClose={() => setShowExtractionModal(false)}
+                onConfirm={(data) => {
+                    console.log("Potvrđeni podaci:", data);
+                    setShowExtractionModal(false);
+                }}
+            />
         </>
     );
 }
