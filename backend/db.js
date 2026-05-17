@@ -29,7 +29,7 @@ const poolConfig = process.env.DATABASE_URL
     connectionString: process.env.DATABASE_URL,
     ssl: process.env.DATABASE_URL.toLowerCase().includes('sslmode=require')
       ? { rejectUnauthorized: false }
-      : undefined
+      : false  // Disable SSL by default unless explicitly required
   }
   : {
     host: process.env.PG_HOST,
@@ -37,7 +37,7 @@ const poolConfig = process.env.DATABASE_URL
     password: process.env.PG_PASSWORD,
     database: process.env.PG_DATABASE,
     port: Number(process.env.PG_PORT) || 5432,
-    ssl: { rejectUnauthorized: false }
+    ssl: false  // Disable SSL for local/dev connections
   };
 
 console.log("=== DEBUG POOL CONFIG ===");

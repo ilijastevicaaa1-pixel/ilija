@@ -1,5 +1,5 @@
-const fs = require('fs');
-const { Client } = require('pg');
+import fs from 'fs';
+import { Client } from 'pg';
 
 async function importSQL() {
     const sql = fs.readFileSync('knjigovodstvo.sql', 'utf8');
@@ -30,4 +30,4 @@ async function importSQL() {
     return "SQL import završen!";
 }
 
-module.exports = importSQL;
+export default importSQL;

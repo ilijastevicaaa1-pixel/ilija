@@ -141,9 +141,9 @@ router.post('/command', async (req, res) => {
           return { message: 'MATCH_BANK još nije implementiran na backendu.' };
 
         default:
-          return { message: 'Neznáma akcia.' };
-      }
-    }
+           return { message: 'Neznáma akcia: ' + action + '. Skús jednu z dostupných akcií: LIST_INVOICES, ANALYZE_VAT, SUGGEST_LEDGER, MONTHLY_REPORT, YEARLY_REPORT, CUSTOM_REPORT, MATCH_BANK.' };
+       }
+     }
 
     // ===============================
     //  PRIPREMA PORUKA SA KONTEKSTOM
