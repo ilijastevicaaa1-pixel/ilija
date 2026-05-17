@@ -1,0 +1,14 @@
+// AUTO-GENERISANO: uklanjanje literalnih tokena "\\n" koji prave SyntaxError.
+// Ne diraju se funkcije/rute/middleware logika; uklanja se samo karakter-sekvenca '\\n'.
+
+import fs from 'fs';
+
+const inputPath = new URL('./server.js', import.meta.url);
+const raw = fs.readFileSync(inputPath, 'utf8');
+const cleaned = raw.replace(/\\n/g, '');
+
+const outPath = new URL('./server.js.cleaned.js', import.meta.url);
+fs.writeFileSync(outPath, cleaned, 'utf8');
+
+console.log('server.js cleaned written to server.js.cleaned.js');
+
