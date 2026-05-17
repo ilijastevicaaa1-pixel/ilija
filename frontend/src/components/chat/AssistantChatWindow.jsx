@@ -432,7 +432,13 @@ function AssistantChatWindow({ onClose }) {
     });
 
     const shouldSkipAI = !!fixedReply || isMenuOnlyNumber || isKnownSubOptionText;
-    if (shouldSkipAI) {
+
+    // IMPORTANT: Allow basic greetings (e.g. "hej", "zdravo") to still reach the backend.
+    // Otherwise the chat may appear to stop responding.
+    const t0 = normalizeText(trimmed);
+    const isGreeting = /^(hej|zdravo|dobar\s+dan|dobar\s+vecer|dobro\s+jutro|salut|yoo)$/.test(t0);
+
+    if (shouldSkipAI && !isGreeting) {
       setIsSending(false);
       return;
     }
