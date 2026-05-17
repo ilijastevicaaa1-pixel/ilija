@@ -78,7 +78,7 @@ const subOptions = {
   zakaznici: {
     "1": "pridavanie zakaznikov",
     "2": "prehlad historie",
-
+    "3": "automaticke doplnanie udajov do faktur"
   },
   projekty: {
     "1": "vydavky podla projektu",
@@ -423,25 +423,11 @@ function AssistantChatWindow({ onClose }) {
         return;
       }
     }
+    // Skip AI samo ako je korisnik u meniju i bira opciju
+    const shouldSkipAI =
+      (activeCategory && isMenuOnlyNumber) ||
+      (!!fixedReply && activeCategory);
 
-    // Ako je korisnik izabrao opciju iz menija → ne zovemo AI
-    const normalizedTrimmed = normalizeText(trimmed);
-    const isMenuOnlyNumber = /^([1-9]|10|11)$/.test(normalizedTrimmed);
-    const isKnownSubOptionText = Object.values(subOptions).some(category => {
-      return Object.values(category).some(label => normalizeText(label) === normalizedTrimmed);
-    });
-
-    const shouldSkipAI = !!fixedReply || isMenuOnlyNumber || isKnownSubOptionText;
-
-    // IMPORTANT: Allow basic greetings (e.g. "hej", "zdravo") to still reach the backend.
-    // Otherwise the chat may appear to stop responding.
-    const t0 = normalizeText(trimmed);
-    const isGreeting = /^(hej|zdravo|dobar\s+dan|dobar\s+vecer|dobro\s+jutro|salut|yoo)$/.test(t0);
-
-    if (shouldSkipAI && !isGreeting) {
-      setIsSending(false);
-      return;
-    }
 
     // ----------------------
     // POZIV AI BACKENDU
