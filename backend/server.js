@@ -1052,36 +1052,86 @@ app.get('/api/trends', async (req, res) => {
     expenseCategories
   });
 });
-// KPI vrednosti za dashboard
+//// KPI vrednosti za dashboard
 app.get('/api/kpi', async (req, res) => {
   const db = await getDb();
+
   // Godina (default: trenutna)
   const now = new Date();
   const year = String(now.getFullYear());
+
   // Ukupni godišnji prihod
-  const { rows: incomeRowArr } = await db.query(`SELECT SUM(total_amount) AS total_income FROM output_invoices WHERE EXTRACT(YEAR FROM issue_date) = $1`, [year]);
+  const { rows: incomeRowArr } = await db.query(
+    `SELECT SUM(total_amount) AS total_income 
+     FROM output_invoices 
+     WHERE EXTRACT(YEAR FROM issue_date) = $1`,
+    [year]
+  );
   const incomeRow = incomeRowArr[0] || {};
+
   // Ukupni godišnji rashod
-  const { rows: expenseRowArr } = await db.query(`SELECT SUM(total_amount) AS total_expense FROM input_invoices WHERE EXTRACT(YEAR FROM payment_date) = $1`, [year]);
+  const { rows: expenseRowArr } = await db.query(
+    `SELECT SUM(total_amount) AS total_expense 
+     FROM input_invoices 
+     WHERE EXTRACT(YEAR FROM payment_date) = $1`,
+    [year]
+  );
   const expenseRow = expenseRowArr[0] || {};
+
   // Ukupni izlazni PDV
-  const { rows: outputVatRowArr } = await db.query(`SELECT SUM(vat_amount) AS output_vat FROM output_invoices WHERE EXTRACT(YEAR FROM issue_date) = $1`, [year]);
+  const { rows: outputVatRowArr } = await db.query(
+    `SELECT SUM(vat_amount) AS output_vat 
+     FROM output_invoices 
+     WHERE EXTRACT(YEAR FROM issue_date) = $1`,
+    [year]
+  );
   const outputVatRow = outputVatRowArr[0] || {};
+
   // Ukupni ulazni PDV
-  const { rows: inputVatRowArr } = await db.query(`SELECT SUM(vat_amount) AS input_vat FROM input_invoices WHERE EXTRACT(YEAR FROM payment_date) = $1`, [year]);
+  const { rows: inputVatRowArr } = await db.query(
+    `SELECT SUM(vat_amount) AS input_vat 
+     FROM input_invoices 
+     WHERE EXTRACT(YEAR FROM payment_date) = $1`,
+    [year]
+  );
   const inputVatRow = inputVatRowArr[0] || {};
+
   // Profit YTD
   const total_income = incomeRow.total_income || 0;
   const total_expense = expenseRow.total_expense || 0;
   const profit_ytd = total_income - total_expense;
+
   // Ukupni PDV
   const total_vat = (outputVatRow.output_vat || 0) - (inputVatRow.input_vat || 0);
+
   // Prosečan mesečni prihod
-  const { rows: monthsIncome } = await db.query(`SELECT TO_CHAR(issue_date, 'YYYY-MM') AS month, SUM(total_amount) AS income FROM output_invoices WHERE EXTRACT(YEAR FROM issue_date) = $1 GROUP BY month`, [year]);
-  const avg_month_income = monthsIncome.length > 0 ? (monthsIncome.reduce((sum, r) => sum + (r.income || 0), 0) / monthsIncome.length) : 0;
+  const { rows: monthsIncome } = await db.query(
+    `SELECT TO_CHAR(issue_date, 'YYYY-MM') AS month, 
+            SUM(total_amount) AS income 
+     FROM output_invoices 
+     WHERE EXTRACT(YEAR FROM issue_date) = $1 
+     GROUP BY month`,
+    [year]
+  );
+  const avg_month_income =
+    monthsIncome.length > 0
+      ? monthsIncome.reduce((sum, r) => sum + (r.income || 0), 0) / monthsIncome.length
+      : 0;
+
   // Prosečan mesečni rashod
-  const { rows: monthsExpense } = await db.query(`SELECT TO_CHAR(payment_date, 'YYYY-MM') AS month, SUM(total_amount) AS expense FROM input_invoices WHERE EXTRACT(YEAR FROM payment_date) = $1 GROUP BY month`, [year]);
-  const avg_month_expense = monthsExpense.length > 0 ? (monthsExpense.reduce((sum, r) => sum + (r.expense || 0), 0) / monthsExpense.length) : 0;
+  const { rows: monthsExpense } = await db.query(
+    `SELECT TO_CHAR(payment_date, 'YYYY-MM') AS month, 
+            SUM(total_amount) AS expense 
+     FROM input_invoices 
+     WHERE EXTRACT(YEAR FROM payment_date) = $1 
+     GROUP BY month`,
+    [year]
+  );
+  const avg_month_expense =
+    monthsExpense.length > 0
+      ? monthsExpense.reduce((sum, r) => sum + (r.expense || 0), 0) / monthsExpense.length
+      : 0;
+
   res.json({
     year,
     total_income,
@@ -1094,24 +1144,63 @@ app.get('/api/kpi', async (req, res) => {
     output_vat: outputVatRow.output_vat || 0
   });
 });
+
+
 // Dashboard podaci po mesecima
 app.get('/api/dashboard', async (req, res) => {
   const db = await getDb();
+
   // Prihodi po mesecima
-  const { rows: incomeRows } = await db.query(`SELECT TO_CHAR(issue_date, 'YYYY-MM') AS month, SUM(total_amount) AS income FROM output_invoices GROUP BY month ORDER BY month`);
+  const { rows: incomeRows } = await db.query(
+    `SELECT TO_CHAR(issue_date, 'YYYY-MM') AS month, 
+            SUM(total_amount) AS income 
+     FROM output_invoices 
+     GROUP BY month 
+     ORDER BY month`
+  );
+
   // Rashodi po mesecima
-  const { rows: expenseRows } = await db.query(`SELECT TO_CHAR(payment_date, 'YYYY-MM') AS month, SUM(total_amount) AS expense FROM input_invoices GROUP BY month ORDER BY month`);
+  const { rows: expenseRows } = await db.query(
+    `SELECT TO_CHAR(payment_date, 'YYYY-MM') AS month, 
+            SUM(total_amount) AS expense 
+     FROM input_invoices 
+     GROUP BY month 
+     ORDER BY month`
+  );
+
   // Neto profit po mesecima
   const profitRows = incomeRows.map(row => {
     const expense = expenseRows.find(e => e.month === row.month)?.expense || 0;
     return { month: row.month, profit: (row.income || 0) - expense };
   });
+
   // Broj ulaznih faktura po mesecima
-  const { rows: inputInvoiceRows } = await db.query(`SELECT TO_CHAR(payment_date, 'YYYY-MM') AS month, COUNT(*) AS count FROM input_invoices GROUP BY month ORDER BY month`);
+  const { rows: inputInvoiceRows } = await db.query(
+    `SELECT TO_CHAR(payment_date, 'YYYY-MM') AS month, 
+            COUNT(*) AS count 
+     FROM input_invoices 
+     GROUP BY month 
+     ORDER BY month`
+  );
+
   // Broj izlaznih faktura po mesecima
-  const { rows: outputInvoiceRows } = await db.query(`SELECT TO_CHAR(issue_date, 'YYYY-MM') AS month, COUNT(*) AS count FROM output_invoices GROUP BY month ORDER BY month`);
+  const { rows: outputInvoiceRows } = await db.query(
+    `SELECT TO_CHAR(issue_date, 'YYYY-MM') AS month, 
+            COUNT(*) AS count 
+     FROM output_invoices 
+     GROUP BY month 
+     ORDER BY month`
+  );
+
   // Broj bankovnih transakcija po mesecima
-  const { rows: bankTxRows } = await db.query(`SELECT TO_CHAR(transaction_date, 'YYYY-MM') AS month, COUNT(*) AS count FROM bank_transactions GROUP BY month ORDER BY month`);
+  const { rows: bankTxRows } = await db.query(
+    `SELECT TO_CHAR(transaction_date, 'YYYY-MM') AS month, 
+            COUNT(*) AS count 
+     FROM bank_transactions 
+     GROUP BY month 
+     ORDER BY month`
+  );
+
   res.json({
     income: incomeRows,
     expense: expenseRows,
@@ -1121,50 +1210,69 @@ app.get('/api/dashboard', async (req, res) => {
     bankTransactions: bankTxRows
   });
 });
+
+
 // Automatsko generisanje godišnjeg izveštaja
 app.post('/api/godisnji-izvestaji/generisi', async (req, res) => {
-  // Očekuje: { year }
   const { year } = req.body;
   if (!year) {
     return res.status(400).json({ error: 'Nedostaje godina.' });
   }
+
   const db = await getDb();
-  // Prihodi: suma total_amount iz output_invoices za godinu
+
+  // Prihodi
   const { rows: incomeRowArr } = await db.query(
-    `SELECT SUM(total_amount) AS total_income FROM output_invoices WHERE EXTRACT(YEAR FROM issue_date) = $1`,
+    `SELECT SUM(total_amount) AS total_income 
+     FROM output_invoices 
+     WHERE EXTRACT(YEAR FROM issue_date) = $1`,
     [year]
   );
   const incomeRow = incomeRowArr[0] || {};
-  // Rashodi: suma total_amount iz input_invoices za godinu
+
+  // Rashodi
   const { rows: expenseRowArr } = await db.query(
-    `SELECT SUM(total_amount) AS total_expense FROM input_invoices WHERE EXTRACT(YEAR FROM payment_date) = $1`,
+    `SELECT SUM(total_amount) AS total_expense 
+     FROM input_invoices 
+     WHERE EXTRACT(YEAR FROM payment_date) = $1`,
     [year]
   );
   const expenseRow = expenseRowArr[0] || {};
-  // PDV: suma vat_amount iz output_invoices minus suma vat_amount iz input_invoices za godinu
+
+  // PDV
   const { rows: outputVatRowArr } = await db.query(
-    `SELECT SUM(vat_amount) AS output_vat FROM output_invoices WHERE EXTRACT(YEAR FROM issue_date) = $1`,
+    `SELECT SUM(vat_amount) AS output_vat 
+     FROM output_invoices 
+     WHERE EXTRACT(YEAR FROM issue_date) = $1`,
     [year]
   );
   const outputVatRow = outputVatRowArr[0] || {};
+
   const { rows: inputVatRowArr } = await db.query(
-    `SELECT SUM(vat_amount) AS input_vat FROM input_invoices WHERE EXTRACT(YEAR FROM payment_date) = $1`,
+    `SELECT SUM(vat_amount) AS input_vat 
+     FROM input_invoices 
+     WHERE EXTRACT(YEAR FROM payment_date) = $1`,
     [year]
   );
   const inputVatRow = inputVatRowArr[0] || {};
+
   const total_vat = (outputVatRow.output_vat || 0) - (inputVatRow.input_vat || 0);
-  // Transakcije: broj bankovnih transakcija za godinu
-  // Migracija za PostgreSQL:
+
+  // Bankovne transakcije
   const { rows: txCountRowArr } = await db.query(
-    `SELECT COUNT(*) AS total_transactions FROM bank_transactions WHERE EXTRACT(YEAR FROM transaction_date) = $1`,
+    `SELECT COUNT(*) AS total_transactions 
+     FROM bank_transactions 
+     WHERE EXTRACT(YEAR FROM transaction_date) = $1`,
     [year]
   );
   const txCountRow = txCountRowArr[0] || {};
-  // Profit: prihodi - rashodi
+
+  // Profit
   const total_income = incomeRow.total_income || 0;
   const total_expense = expenseRow.total_expense || 0;
   const total_transactions = txCountRow.total_transactions || 0;
   const profit = total_income - total_expense;
+
   res.json({
     year,
     total_income,
@@ -1174,6 +1282,7 @@ app.post('/api/godisnji-izvestaji/generisi', async (req, res) => {
     profit
   });
 });
+
 // Automatsko generisanje PDV perioda
 app.post('/api/pdv-periodi/generisi', async (req, res) => {
   // Očekuje: { period_start, period_end }
