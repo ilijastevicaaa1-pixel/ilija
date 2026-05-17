@@ -4,8 +4,10 @@ import bcrypt from 'bcrypt';
 
 async function initializeDatabase() {
   try {
-    // 1. Kreiranje tabele ako ne postoji
+    // 1) Kreiranje minimalnih tabela koje backend koristi.
+    //    Ovo je posebno bitno na produkciji (Render/Neon) gde schema možda nije prethodno importovana.
     const db = await getDb();
+
     await db.query(`
       CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
@@ -16,7 +18,53 @@ async function initializeDatabase() {
       );
     `);
 
-    console.log("Tabela 'users' proverena / kreirana.");
+    // Izlazne fakture (dashboard/trends)
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS output_invoices (
+        id SERIAL PRIMARY KEY,
+        invoice_number VARCHAR(255),
+        issue_date DATE DEFAULT CURRENT_DATE,
+        due_date DATE,
+        amount_without_vat NUMERIC,
+        vat_amount NUMERIC,
+        total_amount NUMERIC,
+        customer VARCHAR(255),
+        status VARCHAR(50)
+      );
+    `);
+
+    // Ulazne fakture (dashboard/trends)
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS input_invoices (
+        id SERIAL PRIMARY KEY,
+        company_id INTEGER,
+        invoice_number VARCHAR(255),
+        issue_date DATE DEFAULT CURRENT_DATE,
+        receipt_date DATE,
+        payment_date DATE,
+        amount_without_vat NUMERIC,
+        vat_amount NUMERIC,
+        total_amount NUMERIC,
+        supplier VARCHAR(255),
+        expense_category VARCHAR(255),
+        pdf_path TEXT
+      );
+    `);
+
+    // Bankovne transakcije (dashboard/trends)
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS bank_transactions (
+        id SERIAL PRIMARY KEY,
+        transaction_date DATE DEFAULT CURRENT_DATE,
+        amount NUMERIC,
+        description TEXT,
+        category VARCHAR(255),
+        invoice_id INTEGER
+      );
+    `);
+
+    console.log("Minimalna schema (users/output_invoices/input_invoices/bank_transactions) proverena / kreirana.");
+
 
     // 2. Provera da li admin postoji
     const adminCheck = await db.query(
