@@ -17,9 +17,6 @@ router.post('/parse-faktura', upload.single('file'), async (req, res) => {
     if (!req.file) return res.status(400).json({ error: 'Nema fajla.' });
 
     const ext = path.extname(req.file.originalname).toLowerCase();
-    if (['.png', '.jpg', '.jpeg'].includes(ext)) {
-      return res.status(400).json({ error: 'AI ne podržava slike. Koristi PDF format.' });
-    }
     if (!['.pdf'].includes(ext)) {
       return res.status(400).json({ error: 'Nepodržan format. Koristi PDF.' });
     }
@@ -27,7 +24,7 @@ router.post('/parse-faktura', upload.single('file'), async (req, res) => {
     const result = await parseFakturaAI(req.file.path);
     fs.unlink(req.file.path, () => { });
 
-    if (result.error && result.error.includes('model does not support image')) {
+    if (result?.error?.includes('model does not support image')) {
       return res.status(400).json({ error: 'AI model ne podržava slike. Koristi PDF format.' });
     }
 
@@ -43,9 +40,6 @@ router.post('/parse-faktura', upload.single('file'), async (req, res) => {
 // ===============================
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-const LLAMA_API_KEY = process.env.LLAMA_API_KEY;
-const LLAMA_URL = process.env.LLAMA_URL;
-
 
 router.post('/command', async (req, res) => {
   try {
@@ -61,19 +55,15 @@ router.post('/command', async (req, res) => {
       return res.status(400).json({ error: 'Nema teksta.' });
     }
 
-    const apiKey = GROQ_API_KEY || OPENAI_API_KEY || LLAMA_API_KEY;
+    const apiKey = GROQ_API_KEY || OPENAI_API_KEY;
     const usingGroq = !!GROQ_API_KEY;
     console.log('[AI /command] apiKey config:', {
       GROQ_API_KEY_set: !!GROQ_API_KEY,
       OPENAI_API_KEY_set: !!OPENAI_API_KEY,
-      LLAMA_API_KEY_set: !!LLAMA_API_KEY,
       usingGroq
     });
 
-
-    // --- POZDRAV / MENU (neposielať do AI) ---
-    // Model občas vráti JSON s `action: "hello"`, ktoré backend nepozná.
-    // Takéto krátke správy vždy vyriešime deterministicky.
+    // --- POZDRAV / MENU (ne šaljemo u AI) ---
     const t = String(text).toLowerCase();
     if (
       t.includes('ahoj') ||
@@ -91,13 +81,15 @@ router.post('/command', async (req, res) => {
       return res.status(500).json({ error: 'AI ključ nije konfigurisan.' });
     }
 
-
     // --- ACTION PARSER ---
     function tryParseJSON(str) {
       if (!str || typeof str !== 'string') return null;
       const trimmed = str.trim();
-      // skini ```json ... ``` ako model to doda
-      const cleaned = trimmed.replace(/^```json/i, '').replace(/```$/i, '').trim();
+      const cleaned = trimmed
+        .replace(/^```json/i, '')
+        .replace(/^```/i, '')
+        .replace(/```$/i, '')
+        .trim();
       try {
         return JSON.parse(cleaned);
       } catch {
@@ -142,7 +134,12 @@ router.post('/command', async (req, res) => {
           return { message: 'MATCH_BANK još nije implementiran na backendu.' };
 
         default:
-          return { message: 'Neznáma akcia: ' + action + '. Skús jednu z dostupných akcií: LIST_INVOICES, ANALYZE_VAT, SUGGEST_LEDGER, MONTHLY_REPORT, YEARLY_REPORT, CUSTOM_REPORT, MATCH_BANK.' };
+          return {
+            message:
+              'Neznáma akcia: ' +
+              action +
+              '. Skús jednu z dostupných akcií: LIST_INVOICES, ANALYZE_VAT, SUGGEST_LEDGER, MONTHLY_REPORT, YEARLY_REPORT, CUSTOM_REPORT, MATCH_BANK.'
+          };
       }
     }
 
@@ -178,10 +175,9 @@ router.post('/command', async (req, res) => {
       max_tokens: 512
     };
 
-    const url = GROQ_API_KEY
+    const url = usingGroq
       ? 'https://api.groq.com/openai/v1/chat/completions'
-      : (LLAMA_URL || 'https://api.openai.com/v1/chat/completions');
-
+      : 'https://api.openai.com/v1/chat/completions';
 
     const headers = {
       'Content-Type': 'application/json',
@@ -201,13 +197,13 @@ router.post('/command', async (req, res) => {
     });
 
     const rawText = await aiRes.text();
-    console.log('[AI] LLAMA/raw diagnostics:', {
+    console.log('[AI] RAW diagnostics:', {
       status: aiRes.status,
       contentType: aiRes.headers.get('content-type'),
       textHead: rawText ? rawText.slice(0, 2000) : ''
     });
-    let aiData;
 
+    let aiData;
     try {
       aiData = rawText ? JSON.parse(rawText) : {};
     } catch {
@@ -215,14 +211,13 @@ router.post('/command', async (req, res) => {
     }
 
     console.log('[AI /command] HTTP STATUS:', aiRes.status);
-    console.log('[AI /command] RAW RESPONSE:', rawText);
     console.log('[AI /command] Parsed JSON:', aiData);
 
     if (aiData.error) {
       return res.status(400).json({ reply: aiData.error.message || 'Greška u AI.' });
     }
 
-    // Robust extractor (OpenAI/Groq style + possible LLAMA variants)
+    // Robust extractor (OpenAI/Groq style)
     const reply =
       aiData?.choices?.[0]?.message?.content ||
       aiData?.choices?.[0]?.text ||
@@ -232,17 +227,14 @@ router.post('/command', async (req, res) => {
       (rawText ? rawText.slice(0, 1200) : null) ||
       'AI odpoveď nie je dostupná.';
 
-
     // Pokušaj da parsiraš JSON akciju
     const parsed = tryParseJSON(reply);
 
-    // If model returns JSON but we can't run any known action,
-    // return the model's message/context instead of falling back to "Neznáma akcia."
     if (parsed && typeof parsed === 'object' && parsed.action) {
       const result = await executeAction(parsed.action, parsed.params || {});
-      const resultJson = result && typeof result === 'object' ? result : { message: String(result) };
+      const resultJson =
+        result && typeof result === 'object' ? result : { message: String(result) };
 
-      // Keep content if action isn't implemented
       if (resultJson && resultJson.message && resultJson.message !== 'Neznáma akcia.') {
         return res.json({
           answer: JSON.stringify(resultJson, null, 2),
@@ -250,13 +242,15 @@ router.post('/command', async (req, res) => {
         });
       }
 
-      // Unknown action -> still show raw model JSON
       return res.json({
-        answer: JSON.stringify({ rawModelAction: parsed.action, ...resultJson, modelReply: reply }, null, 2),
+        answer: JSON.stringify(
+          { rawModelAction: parsed.action, ...resultJson, modelReply: reply },
+          null,
+          2
+        ),
         context: parsed.context || context || null
       });
     }
-
 
     // ===============================
     //  EKSTRAKCIJA NOVOG KONTEKSTA
