@@ -235,13 +235,27 @@ router.post('/command', async (req, res) => {
     // Pokušaj da parsiraš JSON akciju
     const parsed = tryParseJSON(reply);
 
-    if (parsed && parsed.action) {
+    // If model returns JSON but we can't run any known action,
+    // return the model's message/context instead of falling back to "Neznáma akcia."
+    if (parsed && typeof parsed === 'object' && parsed.action) {
       const result = await executeAction(parsed.action, parsed.params || {});
+      const resultJson = result && typeof result === 'object' ? result : { message: String(result) };
+
+      // Keep content if action isn't implemented
+      if (resultJson && resultJson.message && resultJson.message !== 'Neznáma akcia.') {
+        return res.json({
+          answer: JSON.stringify(resultJson, null, 2),
+          context: parsed.context || context || null
+        });
+      }
+
+      // Unknown action -> still show raw model JSON
       return res.json({
-        answer: JSON.stringify(result, null, 2),
+        answer: JSON.stringify({ rawModelAction: parsed.action, ...resultJson, modelReply: reply }, null, 2),
         context: parsed.context || context || null
       });
     }
+
 
     // ===============================
     //  EKSTRAKCIJA NOVOG KONTEKSTA
