@@ -200,6 +200,11 @@ router.post('/command', async (req, res) => {
     });
 
     const rawText = await aiRes.text();
+    console.log('[AI] LLAMA/raw diagnostics:', {
+      status: aiRes.status,
+      contentType: aiRes.headers.get('content-type'),
+      textHead: rawText ? rawText.slice(0, 2000) : ''
+    });
     let aiData;
 
     try {
@@ -216,8 +221,16 @@ router.post('/command', async (req, res) => {
       return res.status(400).json({ reply: aiData.error.message || 'Greška u AI.' });
     }
 
+    // Robust extractor (OpenAI/Groq style + possible LLAMA variants)
     const reply =
-      aiData.choices?.[0]?.message?.content || 'AI odpoveď nie je dostupná.';
+      aiData?.choices?.[0]?.message?.content ||
+      aiData?.choices?.[0]?.text ||
+      aiData?.output ||
+      aiData?.response ||
+      aiData?.message ||
+      (rawText ? rawText.slice(0, 1200) : null) ||
+      'AI odpoveď nie je dostupná.';
+
 
     // Pokušaj da parsiraš JSON akciju
     const parsed = tryParseJSON(reply);
