@@ -78,7 +78,7 @@ const subOptions = {
   zakaznici: {
     "1": "pridavanie zakaznikov",
     "2": "prehlad historie",
-    "3": "automaticke doplnanie udajov do faktur"
+
   },
   projekty: {
     "1": "vydavky podla projektu",
