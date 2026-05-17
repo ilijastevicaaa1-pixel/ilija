@@ -33,15 +33,18 @@ router.post("/login", async (req, res) => {
       return res.status(400).json({ message: "Pogrešna lozinka" });
     }
 
+    const jwtSecret = process.env.JWT_SECRET || "dev_secret_key";
+
     const token = jwt.sign(
       {
         id: user.id,
         email: user.email,
         tenantId: user.tenantid || user.tenant_id || null,
       },
-      process.env.JWT_SECRET,
+      jwtSecret,
       { expiresIn: "7d" }
     );
+
 
     res.json({
       message: "Uspešna prijava",
