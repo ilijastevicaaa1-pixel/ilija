@@ -424,9 +424,13 @@ function AssistantChatWindow({ onClose }) {
       }
     }
     // Skip AI samo ako je korisnik u meniju i bira opciju
+    const normalizedTrimmed = normalizeText(trimmed);
+    const isMenuOnlyNumber = /^([1-9]|10|11)$/.test(normalizedTrimmed);
+
     const shouldSkipAI =
       (activeCategory && isMenuOnlyNumber) ||
       (!!fixedReply && activeCategory);
+
 
 
     // ----------------------
