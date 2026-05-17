@@ -1,15 +1,4 @@
-# TODO - JWT_SECRET fix for Render login
+- [ ] Fix AI backend env handling so it supports LLAMA_API_KEY/LLAMA_URL fallback.
+- [ ] Test /api/ai/command in logs (ensure apiKey config shows key set true and model call happens).
+- [ ] Re-test full menu flow in AssistantChatWindow (numbers trigger correct AI response).
 
-## Step 1: Patch login.js
-- [ ] Update `backend/routes/login.js` to use safe secret sourcing (fallback to `dev_secret_key` if missing)
-- [ ] Add explicit runtime validation + clear error handling if secret is missing
-
-## Step 2: Push redeploy
-- [ ] Commit changes
-- [ ] Push to the repo
-- [ ] Trigger Render Deploy latest commit or Restart service
-
-## Step 3: Verify
-- [ ] Confirm logs no longer show: `secretOrPrivateKey must have a value`
-- [ ] Verify frontend login returns token
-- [ ] Verify auth-protected routes work

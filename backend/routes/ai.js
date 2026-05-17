@@ -43,6 +43,9 @@ router.post('/parse-faktura', upload.single('file'), async (req, res) => {
 // ===============================
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+const LLAMA_API_KEY = process.env.LLAMA_API_KEY;
+const LLAMA_URL = process.env.LLAMA_URL;
+
 
 router.post('/command', async (req, res) => {
   try {
@@ -58,12 +61,15 @@ router.post('/command', async (req, res) => {
       return res.status(400).json({ error: 'Nema teksta.' });
     }
 
-    const apiKey = GROQ_API_KEY || OPENAI_API_KEY;
+    const apiKey = GROQ_API_KEY || OPENAI_API_KEY || LLAMA_API_KEY;
+    const usingGroq = !!GROQ_API_KEY;
     console.log('[AI /command] apiKey config:', {
       GROQ_API_KEY_set: !!GROQ_API_KEY,
       OPENAI_API_KEY_set: !!OPENAI_API_KEY,
-      usingGroq: !!GROQ_API_KEY
+      LLAMA_API_KEY_set: !!LLAMA_API_KEY,
+      usingGroq
     });
+
 
     if (!apiKey) {
       // Ne blokiraj "pozdrav" i sitne poruke kad AI nije podešen.
@@ -173,7 +179,8 @@ router.post('/command', async (req, res) => {
 
     const url = GROQ_API_KEY
       ? 'https://api.groq.com/openai/v1/chat/completions'
-      : 'https://api.openai.com/v1/chat/completions';
+      : (LLAMA_URL || 'https://api.openai.com/v1/chat/completions');
+
 
     const headers = {
       'Content-Type': 'application/json',
