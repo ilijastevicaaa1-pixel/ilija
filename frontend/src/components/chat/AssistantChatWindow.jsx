@@ -441,7 +441,7 @@ function AssistantChatWindow({ onClose }) {
     // POZIV AI BACKENDU
     // ----------------------
     try {
-      const data = await apiFetch("https://TVOJ-BACKEND-URL/api/ai/command", {
+      const data = await apiFetch("/api/ai/command", {
         method: "POST",
         body: {
           text: trimmed,
