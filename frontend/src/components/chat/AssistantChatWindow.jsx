@@ -433,7 +433,7 @@ function AssistantChatWindow({ onClose }) {
     // POZIV AI BACKENDU
     // ----------------------
     try {
-      const data = await apiFetch("/api/ai/command", {
+      const data = await apiFetch("https://TVOJ-BACKEND-URL.com/api/ai/command", {
         method: "POST",
         body: {
           text: trimmed,
@@ -442,6 +442,7 @@ function AssistantChatWindow({ onClose }) {
       });
 
       const reply = data.reply || data.answer || "";
+
       if (reply) {
         setMessages(prev => [...prev, { role: "assistant", text: reply }]);
         speak(reply);
@@ -453,6 +454,7 @@ function AssistantChatWindow({ onClose }) {
 
 
       const cat = selectedCategory || categoryFromInput;
+
       if (
         (cat === "fakturacia") &&
         (trimmed === "2" || trimmed.toLowerCase().includes("ocr"))
