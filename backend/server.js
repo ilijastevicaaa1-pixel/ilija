@@ -1,85 +1,107 @@
 // ...existing code...
-// --- AUDIT LOG MIDDLEWARE ---
+
 // --- AUDIT LOG MIDDLEWARE ---
 async function auditLogMiddleware(req, res, next) {
   const db = await getDb();
   const userId = req.user?.id || null; // zahteva authMiddleware za user info
-  let entity, entityId, oldValue = null, newValue = null, type = req.method, message = '';
+
+  let entity,
+    entityId,
+    oldValue = null,
+    newValue = null,
+    type = req.method,
+    message = "";
+
   try {
     // Mapiraj rutu na entitet
-    if (req.path.startsWith('/api/users')) entity = 'users';
-    else if (req.path.startsWith('/api/fakture')) entity = 'input_invoices';
-    else if (req.path.startsWith('/api/izlazne-fakture')) entity = 'output_invoices';
-    else if (req.path.startsWith('/api/banka')) entity = 'bank_transactions';
+    if (req.path.startsWith("/api/users")) entity = "users";
+    else if (req.path.startsWith("/api/fakture")) entity = "input_invoices";
+    else if (req.path.startsWith("/api/izlazne-fakture")) entity = "output_invoices";
+    else if (req.path.startsWith("/api/banka")) entity = "bank_transactions";
     else return next(); // ne loguj ostale
-    // --- AUDIT LOG MIDDLEWARE ---
 
     // ID entiteta
     entityId = req.params.id || null;
+
     // Za PUT/DELETE: učitaj staru vrednost
-    if ((req.method === 'PUT' || req.method === 'DELETE') && entityId) {
+    if ((req.method === "PUT" || req.method === "DELETE") && entityId) {
       const { rows } = await db.query(`SELECT * FROM ${entity} WHERE id = $1`, [entityId]);
       oldValue = rows[0] || null;
     }
+
     // Za POST/PUT: nova vrednost je req.body
-    if (req.method === 'POST' || req.method === 'PUT') {
+    if (req.method === "POST" || req.method === "PUT") {
       newValue = req.body;
     }
+
     // Poruka
-    message = `${type} ${entity}${entityId ? ' id=' + entityId : ''}`;
+    message = `${type} ${entity}${entityId ? " id=" + entityId : ""}`;
+
     // Sačekaj izvršenje rute, pa loguj
-    res.on('finish', async () => {
+    res.on("finish", async () => {
       // Loguj samo ako je uspešno (status < 400)
       if (res.statusCode < 400) {
         await db.query(
-          'INSERT INTO logs (timestamp, user_id, type, entity, entity_id, old_value, new_value, message) VALUES (CURRENT_TIMESTAMP, $1, $2, $3, $4, $5, $6, $7)',
-          [userId, type, entity, entityId, oldValue ? JSON.stringify(oldValue) : null, newValue ? JSON.stringify(newValue) : null, message]
+          "INSERT INTO logs (timestamp, user_id, type, entity, entity_id, old_value, new_value, message) VALUES (CURRENT_TIMESTAMP, $1, $2, $3, $4, $5, $6, $7)",
+          [
+            userId,
+            type,
+            entity,
+            entityId,
+            oldValue ? JSON.stringify(oldValue) : null,
+            newValue ? JSON.stringify(newValue) : null,
+            message,
+          ]
         );
       }
     });
   } catch (e) {
-    console.error('Audit log error:', e);
+    console.error("Audit log error:", e);
   }
+
   next();
 }
 // --- KRAJ AUDIT LOG MIDDLEWARE ---
-// --- ENV & IMPORTS (order matters) ---
 
-import express from 'express';
-import cors from 'cors';
-import multer from 'multer';
-import fs from 'fs';
-import FormData from 'form-data';
-import nodeFetch from 'node-fetch';
-import XLSX from 'xlsx';
-import bcrypt from 'bcrypt';
-import util from 'util';
-import { getDb } from './db.js'; \nimport loginRouter from './routes/login.js'; \nimport importSQL from './import-sql.js';
-import authRouter from './routes/auth.js';
-import { auth } from './authMiddleware.js';
-import { extractTextWithGoogleVision } from './googleVisionOCR.js';
-import { extractInvoiceFields } from './extractFields.js';
-import { suggestPosting } from './autoPosting.js';
-import { classifyPDV, extractDeadlines } from './autoClassification.js';
-import pdfUploadRouter from './routes/pdfUpload.js';
-import bankUploadRouter from './routes/bankUpload.js';
-import itemsRouter from './routes/items.js';
-import warehouseRouter from './routes/warehouse.js';
-import receiptsRouter from './routes/receipts.js';
-import issuesRouter from './routes/issues.js';
-import faktureBatchRouter from './routes/faktureBatch.js';
-import aiRouter from './routes/ai.js';
-import matchingRouter from './routes/matching.js';
+// --- ENV & IMPORTS (order matters) ---
+import express from "express";
+import cors from "cors";
+import multer from "multer";
+import fs from "fs";
+import FormData from "form-data";
+import nodeFetch from "node-fetch";
+import XLSX from "xlsx";
+import bcrypt from "bcrypt";
+import util from "util";
+import { getDb } from "./db.js";
+import loginRouter from "./routes/login.js";
+
+import authRouter from "./routes/auth.js";
+import { auth } from "./authMiddleware.js";
+
+import { extractTextWithGoogleVision } from "./googleVisionOCR.js";
+import { extractInvoiceFields } from "./extractFields.js";
+import { suggestPosting } from "./autoPosting.js";
+import { classifyPDV, extractDeadlines } from "./autoClassification.js";
+import pdfUploadRouter from "./routes/pdfUpload.js";
+import bankUploadRouter from "./routes/bankUpload.js";
+import itemsRouter from "./routes/items.js";
+import warehouseRouter from "./routes/warehouse.js";
+import receiptsRouter from "./routes/receipts.js";
+import issuesRouter from "./routes/issues.js";
+import faktureBatchRouter from "./routes/faktureBatch.js";
+import aiRouter from "./routes/ai.js";
+import matchingRouter from "./routes/matching.js";
 
 // Inicijalizacija baze i admin korisnika
-import initializeDatabase from './dbInit.js';
+import initializeDatabase from "./dbInit.js";
 initializeDatabase();
 
 // Inicijalizacija Express aplikacije
 const app = express();
 
 // --- APP INIT ---
-// --- HELPER FUNKCIJE ZA PREDIKCIJE I INTERVAL --- 
+// --- HELPER FUNKCIJE ZA PREDIKCIJE I INTERVAL ---
 function predictNext(arr) {
   // Prosta linearnost: predviđa sledećih 6 vrednosti kao poslednju vrednost
   if (!Array.isArray(arr) || arr.length === 0) return Array(6).fill(0);
@@ -91,58 +113,83 @@ function confidenceInterval(arr) {
   // Prosta aproksimacija: +- standardna devijacija
   if (!Array.isArray(arr) || arr.length === 0) return { min: 0, max: 0 };
   const avg = arr.reduce((a, b) => a + b, 0) / arr.length;
-  const std = Math.sqrt(arr.reduce((a, b) => a + Math.pow(b - avg, 2), 0) / arr.length);
+  const std = Math.sqrt(
+    arr.reduce((a, b) => a + Math.pow(b - avg, 2), 0) / arr.length
+  );
   return { min: avg - std, max: avg + std };
 }
+
 // ...existing code...
+
 // Root ruta za proveru rada servera
 app.get("/", (req, res) => {
   res.send("Backend radi");
 });
+
 app.use(cors());
 
 // ❗ VAŽNO: JSON parser NE SME da se primeni na multipart/form-data
 app.use((req, res, next) => {
-  if (req.path === '/api/ocr') return next(); // preskoči JSON parser za OCR upload
-  express.json({ limit: '50mb' })(req, res, next);
+  if (req.path === "/api/ocr") return next(); // preskoči JSON parser za OCR upload
+  express.json({ limit: "50mb" })(req, res, next);
 });
-app.use(express.urlencoded({ limit: '50mb', extended: true }));
-app.use('/audio', express.static('audio'));
-app.use('/api/upload/pdf', pdfUploadRouter);
-app.use('/api/upload/bank', bankUploadRouter);
+
+app.use(express.urlencoded({ limit: "50mb", extended: true }));
+app.use("/audio", express.static("audio"));
+
+app.use("/api/upload/pdf", pdfUploadRouter);
+app.use("/api/upload/bank", bankUploadRouter);
 
 // Automatski matching banke i faktura
-app.use('/api/matching', matchingRouter);
+app.use("/api/matching", matchingRouter);
 
 // AI faktura parser
-app.use('/api/ai', aiRouter);
+app.use("/api/ai", aiRouter);
 
 // LOGIN ruta
-app.use('/api', loginRouter);
-app.use('/api/auth', authRouter); \n\n// SQL import route\napp.get('/import', async (req, res) => {\n  try {\n    const result = await importSQL();\n    res.send(result);\n  } catch (err) {\n    res.status(500).send(err.toString());\n  }\n});
+app.use("/api", loginRouter);
+app.use("/api/auth", authRouter);
+
+// SQL import route
+app.get("/import", async (req, res) => {
+  try {
+    const result = await importSQL();
+    res.send(result);
+  } catch (err) {
+    res.status(500).send(err.toString());
+  }
+});
 
 // --- API PREDIKCIJE ---
-
-app.get('/api/predikcije', async (req, res) => {
+app.get("/api/predikcije", async (req, res) => {
   const db = await getDb();
+
   // Prikupi podatke iz baze
-  const { rows } = await db.query('SELECT * FROM output_invoices');
-  const amounts = rows.map(r => r.total_amount);
+  const { rows } = await db.query("SELECT * FROM output_invoices");
+  const amounts = rows.map((r) => r.total_amount);
+
   // Dummy logika za primer
   const months = [];
   const income = amounts;
-  const expense = amounts.map(a => a * 0.7); // dummy
+  const expense = amounts.map((a) => a * 0.7); // dummy
   const profit = income.map((v, i) => v - expense[i]);
+
   const predIncome = predictNext(income);
   const predExpense = predictNext(expense);
   const predProfit = predictNext(profit);
+
   const ciIncome = confidenceInterval(income);
   const ciExpense = confidenceInterval(expense);
   const ciProfit = confidenceInterval(profit);
+
   // Trend linija (projekcija rasta/pada)
-  const trendIncome = predIncome[5] > income[income.length - 1] ? 'rast' : 'pad';
-  const trendExpense = predExpense[5] > expense[expense.length - 1] ? 'rast' : 'pad';
-  const trendProfit = predProfit[5] > profit[profit.length - 1] ? 'rast' : 'pad';
+  const trendIncome =
+    predIncome[5] > income[income.length - 1] ? "rast" : "pad";
+  const trendExpense =
+    predExpense[5] > expense[expense.length - 1] ? "rast" : "pad";
+  const trendProfit =
+    predProfit[5] > profit[profit.length - 1] ? "rast" : "pad";
+
   // Minimalni odgovor da test prodje
   res.json({
     months,
@@ -157,7 +204,7 @@ app.get('/api/predikcije', async (req, res) => {
     ciProfit,
     trendIncome,
     trendExpense,
-    trendProfit
+    trendProfit,
   });
 });
 
@@ -173,8 +220,9 @@ let internalRecords = [];
 // --- MULTER INIT ---
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 50 * 1024 * 1024 } // 50MB limit
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB limit
 });
+
 
 // --- VOICE TO TEXT (OpenAI Whisper) ---
 app.post('/api/voice-to-text', upload.single('audio'), async (req, res) => {
@@ -1619,6 +1667,45 @@ if (process.env.NODE_ENV === 'production') {
       res.sendFile(path.join(frontendPath, 'index.html'));
     });
   })();
+}
+
+// --- COMPATIBILITY ENDPOINTS (from server-broken.js) ---
+// Ne dupliramo rute koje već postoje.
+
+// Health check za Render
+if (!app._router || !app._router.stack.find(l => l.route && l.route.path === '/health')) {
+  app.get('/health', (req, res) => res.send('OK'));
+}
+
+// Test users route
+if (!app._router || !app._router.stack.find(l => l.route && l.route.path === '/users')) {
+  app.get('/users', async (req, res) => {
+    try {
+      const db = await getDb();
+      const result = await db.query('SELECT * FROM users LIMIT 5');
+      res.json(result.rows);
+    } catch (err) {
+      res.status(500).send(err.toString());
+    }
+  });
+}
+
+// SQL import route
+if (!app._router || !app._router.stack.find(l => l.route && l.route.path === '/import-sql')) {
+  app.post('/import-sql', async (req, res) => {
+    try {
+      const sqlPath = path.join(process.cwd(), 'dump.sql');
+      const sql = fs.readFileSync(sqlPath, 'utf8');
+
+      const db = await getDb();
+      await db.query(sql);
+
+      res.json({ message: 'SQL import uspešan!' });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: err.message });
+    }
+  });
 }
 
 export default app;
