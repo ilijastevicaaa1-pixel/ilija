@@ -354,7 +354,6 @@ function AssistantChatWindow({ onClose }) {
   };
 
   // ----------------------
-  // ----------------------
   // SEND MESSAGE
   // ----------------------
   const sendMessage = async (textOverride) => {
@@ -523,7 +522,6 @@ function AssistantChatWindow({ onClose }) {
 
     recognition.start();
   };
-
 
   const onInputKeyDown = (event) => {
     if (event.key === "Enter" && !event.shiftKey) {
