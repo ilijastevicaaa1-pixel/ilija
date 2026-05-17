@@ -95,7 +95,8 @@ import matchingRouter from "./routes/matching.js";
 
 // Inicijalizacija baze i admin korisnika
 import initializeDatabase from "./dbInit.js";
-initializeDatabase();
+await initializeDatabase();
+
 
 // Inicijalizacija Express aplikacije
 const app = express();
