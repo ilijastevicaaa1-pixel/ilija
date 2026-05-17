@@ -66,8 +66,24 @@ router.post('/command', async (req, res) => {
     });
 
     if (!apiKey) {
+      // Ne blokiraj "pozdrav" i sitne poruke kad AI nije podešen.
+      // Ovo sprečava 500 na frontu (npr. "ahoj").
+      const t = String(text).toLowerCase();
+      if (
+        t.includes('ahoj') ||
+        t.includes('hello') ||
+        t.includes('dobry den') ||
+        t.includes('dobrý deň') ||
+        t.includes('zdrav') ||
+        t.includes('nazdrav') ||
+        t.includes('pozdrav')
+      ) {
+        return res.json({ reply: 'Dobrý deň! Vyberte prosím číslo z menu.' });
+      }
+
       return res.status(500).json({ error: 'AI ključ nije konfigurisan.' });
     }
+
 
     // --- ACTION PARSER ---
     function tryParseJSON(str) {
