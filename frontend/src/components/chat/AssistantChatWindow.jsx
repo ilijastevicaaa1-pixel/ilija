@@ -214,10 +214,9 @@ function resolveSubOptionReply(categoryKey, text) {
   const direct = normalizedNumber ? subOptions[categoryKey][normalizedNumber] : null;
   if (!direct) return null;
 
-  // Ne prikazuj “Rozumiem…” (UI spam). Umesto toga samo potvrdi izbor.
+  // Ne prikazuj “Rozumiem…” (UI spam). Umesto toho len potvrď výber.
   return `Vybrali ste: ${direct}.`;
 }
-
 
 function isMainMenuCommand(text) {
   const t = text.toLowerCase().trim();
@@ -229,9 +228,6 @@ function isMainMenuCommand(text) {
   );
 }
 
-// ----------------------
-// COMPONENT
-// ----------------------
 function AssistantChatWindow({ onClose }) {
   const [messages, setMessages] = useState([
     { role: "assistant", text: greeting }
@@ -306,9 +302,6 @@ function AssistantChatWindow({ onClose }) {
     return () => window.removeEventListener("pointerdown", unlockAudioOnFirstGesture);
   }, []);
 
-  // ----------------------
-  // OCR upload + AI extraction
-  // ----------------------
   const handleFileUpload = async (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -353,9 +346,6 @@ function AssistantChatWindow({ onClose }) {
     }
   };
 
-  // ----------------------
-  // MICROPHONE
-  // ----------------------
   const sendMessage = async (textOverride) => {
     const trimmed = (typeof textOverride === "string" ? textOverride : input).trim();
     if (!trimmed || isSending) return;
@@ -364,7 +354,7 @@ function AssistantChatWindow({ onClose }) {
     setInput("");
     setIsSending(true);
 
-    // Reset na glavni meni
+    // Reset na glavni menu
     if (isMainMenuCommand(trimmed)) {
       setSelectedCategory(null);
       setContext(null);
@@ -374,10 +364,34 @@ function AssistantChatWindow({ onClose }) {
       return;
     }
 
+    // Greeting branch (instead of backend call)
+    // Triggered on common greetings.
+    const s = normalizeText(trimmed);
+    const isGreeting = (
+      s === "dobry den" ||
+      s === "dobryden" ||
+      s === "dobre rano" ||
+      s === "dobry vecer" ||
+      s === "ahoj" ||
+      s === "hello" ||
+      s === "czesc" ||
+      s === "hi" ||
+      s === "dobry" ||
+      s.startsWith("dobry")
+    );
+
+    if (isGreeting) {
+      const reply = "Dobrý deň! Vyberte prosím číslo z menu.";
+      setMessages(prev => [...prev, { role: "assistant", text: reply }]);
+      speak(reply);
+      setIsSending(false);
+      return;
+    }
+
     const activeCategory = selectedCategory;
     const fixedReply = resolveSubOptionReply(activeCategory, trimmed);
 
-    // Navigacija na konkretne funkcije (npr. vytvaranie faktur)
+    // Navigacija na konkretne funkcie (npr. vytvaranie faktur)
     const normalizedNumber = parseMenuNumber(trimmed);
     if (activeCategory === "fakturacia" && normalizedNumber === "1") {
       setContext(prev => prev || {
@@ -403,14 +417,14 @@ function AssistantChatWindow({ onClose }) {
       }
     }
 
-    // Ako je već izabrana kategorija i korisnik unosi broj → ponovo pokaži podmeni
+    // Ako je už vybrana kategori a korisnik unosi číslo -> ponovo pokaži podmeni
     if (activeCategory && parseMenuNumber(trimmed)) {
       const retryMessage = formatSubOptions(activeCategory);
       setMessages(prev => [...prev, { role: "assistant", text: retryMessage }]);
       speak(retryMessage);
     }
 
-    // Ako još nema kategorije → detektuj i prikaži podmeni
+    // Ako još nema kategorije -> detektuj i prikaži podmeni
     let categoryFromInput = null;
     if (!selectedCategory) {
       categoryFromInput = detectCategory(trimmed);
@@ -428,14 +442,11 @@ function AssistantChatWindow({ onClose }) {
     const normalizedTrimmed = normalizeText(trimmed);
     const isMenuOnlyNumber = /^([1-9]|10|11)$/.test(normalizedTrimmed);
 
-    // Ne preskači AI kad je korisnik u meniju i unese samo broj.
-    // AI treba da razume pod-opciju (npr. dph.vypocet) i da vrati pravi odgovor.
-    // Skip AI ostavljamo samo za slučaj kad je već izvršena eksplicitna podopcija (fixedReply).
+    // Ne preskoc AI kad je korisnik v meniju i unese samo broj.
     if (!!fixedReply && activeCategory && !isMenuOnlyNumber) {
       setIsSending(false);
       return;
     }
-
 
     // ----------------------
     // POZIV AI BACKENDU
@@ -478,9 +489,6 @@ function AssistantChatWindow({ onClose }) {
 
   };
 
-  // ----------------------
-  // MICROPHONE
-  // ----------------------
   const toggleSpeech = () => {
     setSpeechError("");
     window.speechSynthesis?.cancel();
@@ -632,3 +640,4 @@ function AssistantChatWindow({ onClose }) {
 }
 
 export default AssistantChatWindow;
+
