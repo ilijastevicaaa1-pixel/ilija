@@ -213,8 +213,11 @@ function resolveSubOptionReply(categoryKey, text) {
   const normalizedNumber = parseMenuNumber(text);
   const direct = normalizedNumber ? subOptions[categoryKey][normalizedNumber] : null;
   if (!direct) return null;
-  return `Rozumiem. Zvolili ste: ${direct}. Pokračujte, prosím, ďalším pokynom.`;
+
+  // Ne prikazuj “Rozumiem…” (UI spam). Umesto toga samo potvrdi izbor.
+  return `Vybrali ste: ${direct}.`;
 }
+
 
 function isMainMenuCommand(text) {
   const t = text.toLowerCase().trim();
