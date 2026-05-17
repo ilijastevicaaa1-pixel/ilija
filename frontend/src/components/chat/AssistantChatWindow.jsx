@@ -507,3 +507,4 @@ function AssistantChatWindow({ onClose }) {
 }
 
 export default AssistantChatWindow;
+
