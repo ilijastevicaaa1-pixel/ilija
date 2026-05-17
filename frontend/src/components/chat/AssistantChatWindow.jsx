@@ -412,6 +412,22 @@ function AssistantChatWindow({ onClose }) {
       }
     }
 
+    // Ako je korisnik izabrao opciju iz menija (npr. "1" ili "vytvaranie faktur"),
+    // ne zovemo AI da ne bi vraćao "Rozumiem"/loop.
+    // AI poziv radimo tek kad korisnik treba stvarnu dopunsku informaciju (unos van menija).
+    const normalizedTrimmed = normalizeText(trimmed);
+    const isMenuOnlyNumber = /^([1-9]|10|11)$/.test(normalizedTrimmed);
+    const isKnownSubOptionText = Object.values(subOptions).some(category => {
+      return Object.values(category).some(label => normalizeText(label) === normalizedTrimmed);
+    });
+
+    const shouldSkipAI = !!fixedReply || isMenuOnlyNumber || isKnownSubOptionText;
+
+    if (shouldSkipAI) {
+      setIsSending(false);
+      return;
+    }
+
     // Poziv AI
     try {
       const data = await apiFetch("/api/ai/command", {
@@ -459,9 +475,11 @@ Ak ide o číslo, interpretuj ho podľa dostupných možností v kategórii.
         }
       });
 
-      const reply = data.reply || data.answer || "Rozumiem.";
-      setMessages(prev => [...prev, { role: "assistant", text: reply }]);
-      speak(reply);
+      const reply = data.reply || data.answer || "";
+      if (reply) {
+        setMessages(prev => [...prev, { role: "assistant", text: reply }]);
+        speak(reply);
+      }
 
       if (data.context) {
         setContext(data.context);
