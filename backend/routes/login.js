@@ -39,8 +39,10 @@ router.post("/login", async (req, res) => {
       {
         id: user.id,
         email: user.email,
+        role: user.role || null,
         tenantId: user.tenantid || user.tenant_id || null,
       },
+
       jwtSecret,
       { expiresIn: "7d" }
     );
