@@ -354,6 +354,7 @@ function AssistantChatWindow({ onClose }) {
   };
 
   // ----------------------
+  // ----------------------
   // SEND MESSAGE
   // ----------------------
   const sendMessage = async (textOverride) => {
@@ -364,8 +365,11 @@ function AssistantChatWindow({ onClose }) {
     setInput("");
     setIsSending(true);
 
-    // Reset na glavni meni
-    if (isMainMenuCommand(trimmed)) {
+    // --- GREETING / RESET MENIJA ---
+    const t0 = normalizeText(trimmed);
+    const isGreeting = /^(ahoj|hej|zdravo|cao|ćao|dobar\s+dan|dobar\s+večer|dobro\s+jutro|salut|yoo)$/i.test(t0);
+
+    if (isMainMenuCommand(trimmed) && !isGreeting) {
       setSelectedCategory(null);
       setContext(null);
       setMessages(prev => [...prev, { role: "assistant", text: greeting }]);
@@ -377,7 +381,7 @@ function AssistantChatWindow({ onClose }) {
     const activeCategory = selectedCategory;
     const fixedReply = resolveSubOptionReply(activeCategory, trimmed);
 
-    // Navigacija na konkretne funkcije (npr. vytvaranie faktur)
+    // --- NAVIGACIJA NA KONKRETNE FUNKCIJE ---
     const normalizedNumber = parseMenuNumber(trimmed);
     if (activeCategory === "fakturacia" && normalizedNumber === "1") {
       setContext(prev => prev || {
@@ -389,7 +393,7 @@ function AssistantChatWindow({ onClose }) {
       return window.location.assign("/ai/faktura");
     }
 
-    // Ako je izabrana podopcija, prikaži info
+    // --- PODOPCIJA (HARDKODOVANI ODGOVORI) ---
     if (fixedReply) {
       setMessages(prev => [...prev, { role: "assistant", text: fixedReply }]);
       speak(fixedReply);
@@ -403,15 +407,16 @@ function AssistantChatWindow({ onClose }) {
       }
     }
 
-    // Ako je već izabrana kategorija i korisnik unosi broj → ponovo pokaži podmeni
+    // --- BROJ U OKVIRU KATEGORIJE → PRIKAZ PODMENIJA ---
     if (activeCategory && parseMenuNumber(trimmed)) {
       const retryMessage = formatSubOptions(activeCategory);
       setMessages(prev => [...prev, { role: "assistant", text: retryMessage }]);
       speak(retryMessage);
     }
 
-    // Ako još nema kategorije → detektuj i prikaži podmeni
+    // --- AUTOMATSKA DETEKCIJA KATEGORIJE (privremeno isključena) ---
     let categoryFromInput = null;
+    /*
     if (!selectedCategory) {
       categoryFromInput = detectCategory(trimmed);
       if (categoryFromInput && categoryFromInput !== "asistent") {
@@ -423,20 +428,10 @@ function AssistantChatWindow({ onClose }) {
         return;
       }
     }
+    */
 
-    // Ako je korisnik izabrao opciju iz menija → ne zovemo AI
-    const normalizedTrimmed = normalizeText(trimmed);
-    const isMenuOnlyNumber = /^([1-9]|10|11)$/.test(normalizedTrimmed);
-    const isKnownSubOptionText = Object.values(subOptions).some(category => {
-      return Object.values(category).some(label => normalizeText(label) === normalizedTrimmed);
-    });
-
-    const shouldSkipAI = !!fixedReply || isMenuOnlyNumber || isKnownSubOptionText;
-
-    // IMPORTANT: Allow basic greetings (e.g. "hej", "zdravo") to still reach the backend.
-    // Otherwise the chat may appear to stop responding.
-    const t0 = normalizeText(trimmed);
-    const isGreeting = /^(hej|zdravo|dobar\s+dan|dobar\s+vecer|dobro\s+jutro|salut|yoo)$/.test(t0);
+    // --- BLOKADA AI (ISPRAVLJENO) ---
+    const shouldSkipAI = !!fixedReply;
 
     if (shouldSkipAI && !isGreeting) {
       setIsSending(false);
@@ -464,7 +459,6 @@ function AssistantChatWindow({ onClose }) {
       if (data.context) {
         setContext(data.context);
       }
-
 
       const cat = selectedCategory || categoryFromInput;
       if (
@@ -529,6 +523,7 @@ function AssistantChatWindow({ onClose }) {
 
     recognition.start();
   };
+
 
   const onInputKeyDown = (event) => {
     if (event.key === "Enter" && !event.shiftKey) {
