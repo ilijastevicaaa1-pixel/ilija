@@ -423,6 +423,7 @@ function AssistantChatWindow({ onClose }) {
         return;
       }
     }
+
     // Skip AI samo ako je korisnik u meniju i bira opciju
     const normalizedTrimmed = normalizeText(trimmed);
     const isMenuOnlyNumber = /^([1-9]|10|11)$/.test(normalizedTrimmed);
@@ -431,13 +432,16 @@ function AssistantChatWindow({ onClose }) {
       (activeCategory && isMenuOnlyNumber) ||
       (!!fixedReply && activeCategory);
 
-
+    if (shouldSkipAI) {
+      setIsSending(false);
+      return;
+    }
 
     // ----------------------
     // POZIV AI BACKENDU
     // ----------------------
     try {
-      const data = await apiFetch("https://TVOJ-BACKEND-URL.com/api/ai/command", {
+      const data = await apiFetch("https://TVOJ-BACKEND-URL/api/ai/command", {
         method: "POST",
         body: {
           text: trimmed,
@@ -456,7 +460,6 @@ function AssistantChatWindow({ onClose }) {
         setContext(data.context);
       }
 
-
       const cat = selectedCategory || categoryFromInput;
 
       if (
@@ -472,6 +475,7 @@ function AssistantChatWindow({ onClose }) {
     } finally {
       setIsSending(false);
     }
+
   };
 
   // ----------------------
