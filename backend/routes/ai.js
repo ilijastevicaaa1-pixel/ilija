@@ -45,93 +45,101 @@ const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
 router.post('/command', async (req, res) => {
-   try {
-     const { text, context } = req.body;
+  try {
+    const { text, context } = req.body;
 
-     console.log('[AI /command] FULL REQUEST BODY:', req.body);
+    console.log('[AI /command] FULL REQUEST BODY:', req.body);
+    console.log('[AI /command] text/context presence:', {
+      hasText: typeof text === 'string' && text.trim().length > 0,
+      hasContext: !!context
+    });
 
-     console.log('[AI /command] text/context presence:', {
-       hasText: typeof text === 'string' && text.trim().length > 0,
-       hasContext: !!context
-     });
+    if (!text) {
+      return res.status(400).json({ error: 'Nema teksta.' });
+    }
 
-     if (!text) {
-       return res.status(400).json({ error: 'Nema teksta.' });
-     }
+    const apiKey = GROQ_API_KEY || OPENAI_API_KEY;
+    console.log('[AI /command] apiKey config:', {
+      GROQ_API_KEY_set: !!GROQ_API_KEY,
+      OPENAI_API_KEY_set: !!OPENAI_API_KEY,
+      usingGroq: !!GROQ_API_KEY
+    });
 
-     const apiKey = GROQ_API_KEY || OPENAI_API_KEY;
-     console.log('[AI /command] apiKey config:', {
-       GROQ_API_KEY_set: !!GROQ_API_KEY,
-       OPENAI_API_KEY_set: !!OPENAI_API_KEY,
-       usingGroq: !!GROQ_API_KEY
-     });
+    if (!apiKey) {
+      return res.status(500).json({ error: 'AI ključ nije konfigurisan.' });
+    }
 
-     if (!apiKey) {
-       return res.status(500).json({ error: 'AI ključ nije konfigurisan.' });
-     }
+    // --- ACTION PARSER ---
+    function tryParseJSON(str) {
+      if (!str || typeof str !== 'string') return null;
+      const trimmed = str.trim();
+      // skini ```json ... ``` ako model to doda
+      const cleaned = trimmed.replace(/^```json/i, '').replace(/```$/i, '').trim();
+      try {
+        return JSON.parse(cleaned);
+      } catch {
+        return null;
+      }
+    }
 
-     // --- ACTION PARSER ---
-     function tryParseJSON(text) {
-       try {
-         return JSON.parse(text);
-       } catch {
-         return null;
-       }
-     }
+    async function executeAction(action, params = {}) {
+      const BASE_URL = process.env.AI_INTERNAL_BASE_URL || 'http://localhost:10000';
 
-     async function executeAction(action, params) {
-       switch (action) {
-         case "LIST_INVOICES":
-           return await fetch("http://localhost:3001/api/fakture").then(r => r.json());
+      switch (action) {
+        case 'LIST_INVOICES':
+          return await nodeFetch(`${BASE_URL}/api/fakture`).then(r => r.json());
 
-         case "ANALYZE_VAT":
-           return await fetch("http://localhost:3001/api/vat/analyze", {
-             method: "POST",
-             headers: { "Content-Type": "application/json" },
-             body: JSON.stringify(params)
-           }).then(r => r.json());
+        case 'ANALYZE_VAT':
+          return await nodeFetch(`${BASE_URL}/api/vat/analyze`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(params)
+          }).then(r => r.json());
 
-         case "SUGGEST_LEDGER":
-           return await fetch("http://localhost:3001/api/ledger/suggest", {
-             method: "POST",
-             headers: { "Content-Type": "application/json" },
-             body: JSON.stringify(params)
-           }).then(r => r.json());
+        case 'SUGGEST_LEDGER':
+          return await nodeFetch(`${BASE_URL}/api/ledger/suggest`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(params)
+          }).then(r => r.json());
 
-         case "MONTHLY_REPORT":
-           return await fetch("http://localhost:3001/api/reports/monthly").then(r => r.json());
+        case 'MONTHLY_REPORT':
+          return { message: 'MONTHLY_REPORT još nije implementiran na backendu.' };
 
-         case "YEARLY_REPORT":
-           return await fetch("http://localhost:3001/api/reports/yearly").then(r => r.json());
+        case 'YEARLY_REPORT':
+          return { message: 'YEARLY_REPORT još nije implementiran na backendu.' };
 
-         case "CUSTOM_REPORT":
-           return await fetch(`http://localhost:3001/api/reports/custom?dateFrom=${params.dateFrom}&dateTo=${params.dateTo}`)
-             .then(r => r.json());
+        case 'CUSTOM_REPORT':
+          return {
+            message: 'CUSTOM_REPORT još nije implementiran na backendu.',
+            params
+          };
 
-         case "MATCH_BANK":
-           return await fetch("http://localhost:3001/api/matching", {
-             method: "POST"
-           }).then(r => r.json());
+        case 'MATCH_BANK':
+          return { message: 'MATCH_BANK još nije implementiran na backendu.' };
 
-         default:
-           return { message: "Neznáma akcia." };
-       }
-     }
-     // ===============================
-     //  PRIPREMA PORUKA SA KONTEKSTOM
-     // ===============================
+        default:
+          return { message: 'Neznáma akcia.' };
+      }
+    }
+
+    // ===============================
+    //  PRIPREMA PORUKA SA KONTEKSTOM
+    // ===============================
     const messages = [
       {
         role: 'system',
         content:
-          'Si účtovný AI asistent. Odpovedáš stručne, presne, držíš sa kontextu a nikdy ho neignoruješ.'
+          'Si účtovný AI asistent. Odpovedáš stručne, presne, držíš sa kontextu a nikdy ho neignoruješ. ' +
+          'Ak vieš, odpovedaj v ČISTOM JSON formáte bez komentárov, bez vysvetlení, bez textu okolo. ' +
+          'Formát: {"action":"...","params":{...},"context":{...}}. Ak nevieš akciu, odpovedz obyčajným textom.'
       }
     ];
 
     if (context) {
       messages.push({
         role: 'assistant',
-        content: `Aktuálny kontext: ${context}`
+        content: `Aktuálny kontext: ${JSON.stringify(context)}`
       });
     }
 
@@ -143,7 +151,7 @@ router.post('/command', async (req, res) => {
     const body = {
       model: 'llama-3.1-8b-instant',
       messages,
-      temperature: 0.7,
+      temperature: 0.4,
       max_tokens: 512
     };
 
@@ -153,7 +161,7 @@ router.post('/command', async (req, res) => {
 
     const headers = {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`
+      Authorization: `Bearer ${apiKey}`
     };
 
     console.log('[AI] Sending to AI:', {
@@ -162,16 +170,14 @@ router.post('/command', async (req, res) => {
       preview: text.substring(0, 100) + '...'
     });
 
-    let aiData;
-
     const aiRes = await nodeFetch(url, {
       method: 'POST',
       headers,
       body: JSON.stringify(body)
     });
 
-    // Loguj raw telo da vidimo da li je response JSON i da li ima choices
     const rawText = await aiRes.text();
+    let aiData;
 
     try {
       aiData = rawText ? JSON.parse(rawText) : {};
@@ -183,38 +189,28 @@ router.post('/command', async (req, res) => {
     console.log('[AI /command] RAW RESPONSE:', rawText);
     console.log('[AI /command] Parsed JSON:', aiData);
 
-    if (!aiData || !aiData.choices) {
-      console.error('[AI /command] choices missing. Full parsed response:', aiData);
-    }
-
-    if (aiRes && !aiRes.ok) {
-      console.error('[AI /command] Non-OK response status:', aiRes.status, 'body:', rawText);
-    }
-
-
-
     if (aiData.error) {
       return res.status(400).json({ reply: aiData.error.message || 'Greška u AI.' });
     }
 
-     const reply =
-       aiData.choices?.[0]?.message?.content || 'AI odpoveď nie je dostupná.';
+    const reply =
+      aiData.choices?.[0]?.message?.content || 'AI odpoveď nie je dostupná.';
 
-     // Pokušaj da parsiraš JSON akciju
-     const parsed = tryParseJSON(reply);
+    // Pokušaj da parsiraš JSON akciju
+    const parsed = tryParseJSON(reply);
 
-     if (parsed && parsed.action) {
-       const result = await executeAction(parsed.action, parsed.params || {});
-       return res.json({
-         answer: JSON.stringify(result, null, 2),
-         context: parsed.context || null
-       });
-     }
+    if (parsed && parsed.action) {
+      const result = await executeAction(parsed.action, parsed.params || {});
+      return res.json({
+        answer: JSON.stringify(result, null, 2),
+        context: parsed.context || context || null
+      });
+    }
 
-     // ===============================
-     //  EKSTRAKCIJA NOVOG KONTEKSTA
-     // ===============================
-     const newContext = extractContext(reply, context);
+    // ===============================
+    //  EKSTRAKCIJA NOVOG KONTEKSTA
+    // ===============================
+    const newContext = extractContext(reply, context);
 
     console.log('=== FINAL AI RESPONSE ===');
     console.log('reply:', reply);
@@ -231,7 +227,7 @@ router.post('/command', async (req, res) => {
 //  HELPER: PREPOZNAVANJE KONTEKSTA
 // ===============================
 function extractContext(reply, oldContext) {
-  const r = reply.toLowerCase();
+  const r = (reply || '').toLowerCase();
 
   if (r.includes('fakturácia') || r.includes('fakturacia')) return 'fakturacia';
   if (r.includes('vytvaranie faktur')) return 'fakturacia.vytvaranie';

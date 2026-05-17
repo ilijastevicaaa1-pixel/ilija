@@ -377,26 +377,23 @@ function AssistantChatWindow({ onClose }) {
     const activeCategory = selectedCategory;
     const fixedReply = resolveSubOptionReply(activeCategory, trimmed);
 
-    // Navigacija na konkretne funkcije (npr. vytvaranie faktur) umesto AI odgovora
-    // app rute: /ai/faktura
+    // Navigacija na konkretne funkcije (npr. vytvaranie faktur)
     const normalizedNumber = parseMenuNumber(trimmed);
     if (activeCategory === "fakturacia" && normalizedNumber === "1") {
-      // sačuvaj kontekst (da asistent pamti vetvu) pre prelaza na drugu rutu
       setContext(prev => prev || {
         category: "fakturacia",
         suboption: subOptions.fakturacia["1"]
       });
 
       setIsSending(false);
-      // bez dodatnih AI poruka
       return window.location.assign("/ai/faktura");
     }
 
-    // Ako je izabrana podopcija, prikaži info + ipak zovi AI
+    // Ako je izabrana podopcija, prikaži info
     if (fixedReply) {
       setMessages(prev => [...prev, { role: "assistant", text: fixedReply }]);
       speak(fixedReply);
-      // Sačuvaj podopciju u kontekst
+
       const normalizedNumber = parseMenuNumber(trimmed);
       if (activeCategory && normalizedNumber && subOptions[activeCategory][normalizedNumber]) {
         setContext({
@@ -406,14 +403,14 @@ function AssistantChatWindow({ onClose }) {
       }
     }
 
-    // Ako je već izabrana kategorija i korisnik unosi broj, ponovo pokaži podmeni
+    // Ako je već izabrana kategorija i korisnik unosi broj → ponovo pokaži podmeni
     if (activeCategory && parseMenuNumber(trimmed)) {
       const retryMessage = formatSubOptions(activeCategory);
       setMessages(prev => [...prev, { role: "assistant", text: retryMessage }]);
       speak(retryMessage);
     }
 
-    // Ako još nema kategorije, probaj da je detektuješ i prikažeš podmeni
+    // Ako još nema kategorije → detektuj i prikaži podmeni
     let categoryFromInput = null;
     if (!selectedCategory) {
       categoryFromInput = detectCategory(trimmed);
@@ -427,9 +424,7 @@ function AssistantChatWindow({ onClose }) {
       }
     }
 
-    // Ako je korisnik izabrao opciju iz menija (npr. "1" ili "vytvaranie faktur"),
-    // ne zovemo AI da ne bi vraćao "Rozumiem"/loop.
-    // AI poziv radimo tek kad korisnik treba stvarnu dopunsku informaciju (unos van menija).
+    // Ako je korisnik izabrao opciju iz menija → ne zovemo AI
     const normalizedTrimmed = normalizeText(trimmed);
     const isMenuOnlyNumber = /^([1-9]|10|11)$/.test(normalizedTrimmed);
     const isKnownSubOptionText = Object.values(subOptions).some(category => {
@@ -437,55 +432,19 @@ function AssistantChatWindow({ onClose }) {
     });
 
     const shouldSkipAI = !!fixedReply || isMenuOnlyNumber || isKnownSubOptionText;
-
     if (shouldSkipAI) {
       setIsSending(false);
       return;
     }
 
-    // Poziv AI
+    // ----------------------
+    // POZIV AI BACKENDU
+    // ----------------------
     try {
       const data = await apiFetch("/api/ai/command", {
         method: "POST",
         body: {
-          text: `
-Si slovenský účtovnícky asistent.
-
-Ak vieš, odpovedaj v JSON formáte:
-
-{
-  "action": "...",
-  "params": { ... },
-  "context": { ... }
-}
-
-Dostupné akcie:
-
-1) LIST_INVOICES
-   - vráti zoznam prijatých faktúr
-
-2) ANALYZE_VAT
-   - params: { vat_amount, total_amount }
-
-3) SUGGEST_LEDGER
-   - params: { description, amount, supplier }
-
-4) MONTHLY_REPORT
-5) YEARLY_REPORT
-
-6) CUSTOM_REPORT
-   - params: { dateFrom, dateTo }
-
-7) MATCH_BANK
-   - automatické párovanie banky a faktúr
-
-Ak nevieš akciu, odpovedaj textom.
-
-Aktuálna kategória: ${selectedCategory || categoryFromInput || "nezvolená"}.
-Používateľ zadal: "${trimmed}".
-Odpovedaj stručne, profesionálne, po slovensky.
-Ak ide o číslo, interpretuj ho podľa dostupných možností v kategórii.
-`,
+          text: trimmed,
           context
         }
       });
@@ -499,6 +458,7 @@ Ak ide o číslo, interpretuj ho podľa dostupných možností v kategórii.
       if (data.context) {
         setContext(data.context);
       }
+
 
       const cat = selectedCategory || categoryFromInput;
       if (

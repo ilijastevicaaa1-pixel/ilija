@@ -209,7 +209,7 @@ app.get("/api/predikcije", async (req, res) => {
   });
 });
 
-// --- IN-MEMORY STORAGE INIT ---
+// ---// --- IN-MEMORY STORAGE INIT ---
 let botNotifications = [];
 let knjizenja = [];
 let pdv = [];
@@ -224,6 +224,36 @@ const upload = multer({
   limits: { fileSize: 50 * 1024 * 1024 }, // 50MB limit
 });
 
+// 1. Predlog konta za knjiženje
+app.post('/api/ledger/suggest', async (req, res) => {
+  const { description, amount, supplier } = req.body;
+
+  // Proširena fallback pravila:
+  // - Slovnaft → 501
+  // - Telekom → 512
+  // - Elektro → 513
+  // - Iznos > 100000 → 479
+  // - Default → 400
+
+  let konto = '400';
+  let rule = 'default';
+
+  if (supplier && supplier.toLowerCase().includes('slovnaft')) {
+    konto = '501';
+    rule = 'slovnaft';
+  } else if (supplier && supplier.toLowerCase().includes('telekom')) {
+    konto = '512';
+    rule = 'telekom';
+  } else if (supplier && supplier.toLowerCase().includes('elektro')) {
+    konto = '513';
+    rule = 'elektro';
+  } else if (amount && Number(amount) > 100000) {
+    konto = '479';
+    rule = 'veliki iznos';
+  }
+
+  res.json({ konto, rule });
+});
 
 // --- VOICE TO TEXT (OpenAI Whisper) ---
 app.post('/api/voice-to-text', upload.single('audio'), async (req, res) => {
@@ -261,124 +291,114 @@ app.post('/api/voice-to-text', upload.single('audio'), async (req, res) => {
   }
 });
 
-// --- VOICE COMMAND (dummy AI odgovor, za testiranje) ---
+
+/// --- VOICE COMMAND (AI agent) ---
 app.post('/api/voice-command', upload.single('audio'), async (req, res) => {
   console.log('[VOICE-COMMAND] >>> Ulazim u glavni deo rute');
+
   if (!req.file) {
-    console.log('[VOICE-COMMAND] if (!req.file)');
     console.log('[VOICE-COMMAND] Return 1 se desio');
     return res.status(400).json({ error: 'No file' });
   }
-  console.log('[VOICE-COMMAND] Prosao if 1');
+
   if (!req.file.path) {
-    console.log('[VOICE-COMMAND] if (!req.file.path)');
     console.log('[VOICE-COMMAND] Return 2 se desio');
     return res.status(400).json({ error: 'No file path' });
   }
-  console.log('[VOICE-COMMAND] Prosao if 2');
+
   if (!process.env.OPENAI_API_KEY) {
-    console.log('[VOICE-COMMAND] if (!OPENAI_API_KEY)');
     console.log('[VOICE-COMMAND] Return 3 se desio');
     return res.status(500).json({ error: 'OPENAI_API_KEY nije podešen na serveru.' });
   }
-  console.log('[VOICE-COMMAND] Prosao if 3, nastavljam na Whisper deo');
-  const filePath = req.file ? req.file.path : null;
+
+  const filePath = req.file.path;
+
   try {
     let recognizedText = 'banka'; // fallback
-    console.log('[VOICE-COMMAND] Primljen audio:', req.file ? req.file.path : 'nema fajla');
-    console.log('[VOICE-COMMAND] req.file:', req.file);
-    if (req.file && req.file.path && process.env.OPENAI_API_KEY) {
-      try {
-        const apiKey = process.env.OPENAI_API_KEY;
-        console.log('[VOICE-COMMAND] Pripremam FormData za Whisper...');
-        const form = new FormData();
-        if (!filePath) {
-          console.error('[VOICE-COMMAND] filePath nije definisan!');
-          return res.status(200).json({ reply: 'Nisam čuo, možete da ponovite? (nema filePath)', recognizedText: '' });
-        }
-        try {
-          console.log('[VOICE-COMMAND] Proveravam da li fajl postoji:', filePath);
-          if (!fs.existsSync(filePath)) {
-            console.error('[VOICE-COMMAND] Fajl ne postoji:', filePath);
-            return res.status(200).json({ reply: 'Nisam čuo, možete da ponovite? (fajl ne postoji)', recognizedText: '' });
-          }
-          console.log('[VOICE-COMMAND] Fajl postoji, kreiram stream...');
-          form.append('file', fs.createReadStream(filePath));
-          console.log('[VOICE-COMMAND] Stream kreiran i dodat u FormData.');
-        } catch (streamErr) {
-          console.error('[VOICE-COMMAND] Greška pri čitanju audio fajla:', streamErr);
-          return res.status(200).json({ reply: 'Nisam čuo, možete da ponovite? (greška pri čitanju fajla)', recognizedText: '' });
-        }
-        form.append('model', 'whisper-1');
-        console.log('[VOICE-COMMAND] Šaljem fetch ka Whisper API...');
-        const response = await nodeFetch('https://api.openai.com/v1/audio/transcriptions', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${apiKey}`,
-            ...form.getHeaders()
-          },
-          body: form
-        });
-        console.log('[VOICE-COMMAND] Whisper fetch status:', response.status);
-        let data = {};
-        try {
-          data = await response.json();
-        } catch (jsonErr) {
-          console.error('[VOICE-COMMAND] Greška pri parsiranju Whisper odgovora:', jsonErr);
-          return res.status(200).json({ reply: 'Nisam čuo, možete da ponovite? (greška pri parsiranju odgovora)', recognizedText: '' });
-        }
-        console.log('[VOICE-COMMAND] Whisper response:', data);
-        if (data.text && data.text.trim()) {
-          recognizedText = data.text.trim();
-        } else {
-          // Ako Whisper ne prepozna ništa, vrati recognizedText kao prazan string i reply kao prazan string
-          console.log('[VOICE-COMMAND] Whisper nije prepoznao tekst.');
-          return res.status(200).json({ reply: '', recognizedText: '' });
-        }
-      } catch (err) {
-        console.error('[VOICE-COMMAND] Whisper fallback error:', err);
-        // Ako Whisper API baci grešku, vrati 200 sa specijalnom porukom
-        return res.status(200).json({ reply: 'Nisam čuo, možete da ponovite? (greška kod fetch-a)', recognizedText: '' });
+
+    console.log('[VOICE-COMMAND] Primljen audio:', filePath);
+
+    // --- WHISPER TRANSKRIPCIJA ---
+    try {
+      const apiKey = process.env.OPENAI_API_KEY;
+      const form = new FormData();
+
+      if (!fs.existsSync(filePath)) {
+        console.error('[VOICE-COMMAND] Fajl ne postoji:', filePath);
+        return res.status(200).json({ reply: 'Nisam čuo, možete da ponovite?', recognizedText: '' });
       }
-      fs.unlink(req.file.path, () => { });
-    } else if (req.file && req.file.path) {
-      fs.unlink(req.file.path, () => { });
-      return res.status(500).json({ error: 'OPENAI_API_KEY nije podešen na serveru.' });
+
+      form.append('file', fs.createReadStream(filePath));
+      form.append('model', 'whisper-1');
+
+      const response = await nodeFetch('https://api.openai.com/v1/audio/transcriptions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          ...form.getHeaders()
+        },
+        body: form
+      });
+
+      const data = await response.json();
+      console.log('[VOICE-COMMAND] Whisper response:', data);
+
+      if (data.text && data.text.trim()) {
+        recognizedText = data.text.trim();
+      } else {
+        console.log('[VOICE-COMMAND] Whisper nije prepoznao tekst.');
+        return res.status(200).json({ reply: '', recognizedText: '' });
+      }
+
+    } catch (err) {
+      console.error('[VOICE-COMMAND] Whisper fallback error:', err);
+      return res.status(200).json({ reply: 'Nisam čuo, možete da ponovite?', recognizedText: '' });
     }
 
+    fs.unlink(filePath, () => { });
+
     console.log('[VOICE-COMMAND] Prepoznat tekst:', recognizedText);
-    // Pozovi Llama AI endpoint (isti kao za tekstualni chat)
+
+    // --- POZIV NOVOG AI AGENTA ---
     try {
-      const aiRes = await fetch('http://localhost:3001/api/ai/command', {
+      const aiRes = await fetch('/api/ai/command', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: recognizedText })
       });
+
       if (!aiRes.ok) {
         const errData = await aiRes.text();
-        console.error('[VOICE-COMMAND] Greška u Llama AI endpointu:', errData);
-        return res.status(500).json({ error: 'Greška u Llama AI endpointu', details: errData });
+        console.error('[VOICE-COMMAND] Greška u AI agent endpointu:', errData);
+        return res.status(500).json({ error: 'Greška u AI agent endpointu', details: errData });
       }
+
       const aiData = await aiRes.json();
       console.log('[VOICE-COMMAND] AI odgovor:', aiData);
-      res.json({ reply: aiData.answer || aiData.reply || 'Nema odgovora.', recognizedText });
+
+      res.json({
+        reply: aiData.answer || aiData.reply || 'Nema odgovora.',
+        recognizedText
+      });
+
     } catch (err) {
-      console.error('[VOICE-COMMAND] Greška kod fetch-a ka Llama AI:', err);
-      return res.status(500).json({ error: 'Greška kod fetch-a ka Llama AI', details: err.message });
+      console.error('[VOICE-COMMAND] Greška kod fetch-a ka AI agentu:', err);
+      return res.status(500).json({ error: 'Greška kod fetch-a ka AI agentu', details: err.message });
     }
+
   } catch (err) {
     console.error('[VOICE-COMMAND] Fatalna greška:', err);
     res.status(500).json({ error: 'Fatalna greška u voice-command endpointu', details: err.message });
   }
 });
 
-// --- PRAVI OCR UPLOAD ENDPOINT (radi sa PDF/PNG/JPG) ---
 
+//// --- PRAVI OCR UPLOAD ENDPOINT (radi sa PDF/PNG/JPG) ---
 
 app.post('/api/ocr', upload.single('file'), async (req, res) => {
   try {
-
     console.log('OCR upload req.file:', req.file);
+
     if (!req.file) {
       return res.status(400).json({ error: 'Fajl nije poslat.' });
     }
@@ -415,62 +435,91 @@ app.get('/api/pas', (req, res) => {
 
 // --- PDV primer logike ---
 app.get('/api/pdv', (req, res) => {
-  // Primer: vraća dummy PDV podatke
   res.json({ period: '01-03/2026', iznos: 12345, status: 'plaćeno' });
 });
-//FAZA 2: AI hook-endpointi (dummy, bez AI logike)
 
-// 1. Predlog konta za knjiženje
-app.post('/api/ledger/suggest', async (req, res) => {
-  const { description, amount, supplier } = req.body;
-  // Proširena fallback pravila:
-  // - Slovnaft → 501
-  // - Dobavljač sadrži "telekom" → 512
-  // - Dobavljač sadrži "elektro" → 513
-  // - Iznos > 100000 → 479
-  // - Default: 400
+// --- FAZA 2: AI hook-endpointi (dummy, bez AI logike) ---
+
+// 1. Predlog konta na osnovu dobavljača i iznosa
+app.post('/api/konta/predict', async (req, res) => {
+  const { supplier, amount } = req.body;
+
   let konto = '400';
   let rule = 'default';
-  if (supplier && supplier.toLowerCase().includes('slovnaft')) { konto = '501'; rule = 'slovnaft'; }
-  else if (supplier && supplier.toLowerCase().includes('telekom')) { konto = '512'; rule = 'telekom'; }
-  else if (supplier && supplier.toLowerCase().includes('elektro')) { konto = '513'; rule = 'elektro'; }
-  else if (amount && Number(amount) > 100000) { konto = '479'; rule = 'veliki iznos'; }
+
+  if (supplier && supplier.toLowerCase().includes('slovnaft')) {
+    konto = '501';
+    rule = 'slovnaft';
+  } else if (supplier && supplier.toLowerCase().includes('telekom')) {
+    konto = '512';
+    rule = 'telekom';
+  } else if (supplier && supplier.toLowerCase().includes('elektro')) {
+    konto = '513';
+    rule = 'elektro';
+  } else if (amount && Number(amount) > 100000) {
+    konto = '479';
+    rule = 'veliki iznos';
+  }
+
   // Logovanje
   try {
     const db = await getDb?.();
-    if (db) await db.query('INSERT INTO logs (type, message, timestamp) VALUES ($1, $2, $3)', ['info', `Fallback konta: ${konto} (${rule})`, new Date()]);
-    else console.log(`[LOG] Fallback konta: ${konto} (${rule})`);
-  } catch (e) { console.log('Log error', e); }
-  res.json({ konto, rule, message: `Predlog konta na osnovu pravila: ${konto}` });
+    if (db) {
+      await db.query(
+        'INSERT INTO logs (type, message, timestamp) VALUES ($1, $2, $3)',
+        ['info', `Fallback konta: ${konto} (${rule})`, new Date()]
+      );
+    } else {
+      console.log(`[LOG] Fallback konta: ${konto} (${rule})`);
+    }
+  } catch (e) {
+    console.log('Log error', e);
+  }
+
+  res.json({
+    konto,
+    rule,
+    message: `Predlog konta na osnovu pravila: ${konto}`
+  });
 });
 
 // 2. PDV analiza
 app.post('/api/vat/analyze', async (req, res) => {
   const { vat_amount, total_amount } = req.body;
-  // Proširena fallback pravila:
-  // - PDV > 10.000 → anomalija
-  // - PDV = 0 i ukupno > 10.000 → sumnjivo
-  // - PDV > 25% ukupnog iznosa → sumnjivo
+
   let status = 'ok';
   let notes = [];
+
   if (vat_amount > 10000) {
     status = 'anomaly';
     notes.push('PDV iznos je veći od 10.000 RSD. Proveriti fakturu.');
   }
+
   if (vat_amount == 0 && total_amount > 10000) {
     status = 'suspicious';
     notes.push('PDV je 0 za veliku fakturu. Proveriti osnovicu.');
   }
+
   if (total_amount && vat_amount > 0.25 * total_amount) {
     status = 'suspicious';
     notes.push('PDV je neuobičajeno visok u odnosu na ukupno.');
   }
+
   // Logovanje
   try {
     const db = await getDb?.();
-    if (db) await db.query('INSERT INTO logs (type, message, timestamp) VALUES ($1, $2, $3)', ['info', `Fallback PDV: ${status} (${notes.join('; ')})`, new Date()]);
-    else console.log(`[LOG] Fallback PDV: ${status} (${notes.join('; ')})`);
-  } catch (e) { console.log('Log error', e); }
+    if (db) {
+      await db.query(
+        'INSERT INTO logs (type, message, timestamp) VALUES ($1, $2, $3)',
+        ['info', `Fallback PDV: ${status} (${notes.join('; ')})`, new Date()]
+      );
+    } else {
+      console.log(`[LOG] Fallback PDV: ${status} (${notes.join('; ')})`);
+    }
+  } catch (e) {
+    console.log('Log error', e);
+  }
+
   res.json({ status, notes });
 });
 
@@ -635,8 +684,11 @@ app.get('/api/reports/custom', async (req, res) => {
 app.get('/api/statistics/expenses', async (req, res) => {
   const db = await getDb();
   const { dateFrom, dateTo } = req.query;
-  let sql = `SELECT expense_category, COUNT(*) AS count, SUM(total_amount) AS total, AVG(total_amount) AS avg FROM input_invoices WHERE 1=1`;
+
+  let sql = `SELECT expense_category, COUNT(*) AS count, SUM(total_amount) AS total, AVG(total_amount) AS avg 
+             FROM input_invoices WHERE 1=1`;
   const params = [];
+
   if (dateFrom) {
     sql += ` AND payment_date >= $${params.length + 1}`;
     params.push(dateFrom);
@@ -645,7 +697,9 @@ app.get('/api/statistics/expenses', async (req, res) => {
     sql += ` AND payment_date <= $${params.length + 1}`;
     params.push(dateTo);
   }
+
   sql += ` GROUP BY expense_category ORDER BY total DESC`;
+
   const { rows } = await db.query(sql, params);
   res.json(rows);
 });
@@ -654,8 +708,11 @@ app.get('/api/statistics/expenses', async (req, res) => {
 app.get('/api/statistics/income', async (req, res) => {
   const db = await getDb();
   const { dateFrom, dateTo } = req.query;
-  let sql = `SELECT customer, COUNT(*) AS count, SUM(total_amount) AS total, AVG(total_amount) AS avg FROM output_invoices WHERE 1=1`;
+
+  let sql = `SELECT customer, COUNT(*) AS count, SUM(total_amount) AS total, AVG(total_amount) AS avg 
+             FROM output_invoices WHERE 1=1`;
   const params = [];
+
   if (dateFrom) {
     sql += ` AND issue_date >= $${params.length + 1}`;
     params.push(dateFrom);
@@ -664,117 +721,103 @@ app.get('/api/statistics/income', async (req, res) => {
     sql += ` AND issue_date <= $${params.length + 1}`;
     params.push(dateTo);
   }
+
   sql += ` GROUP BY customer ORDER BY total DESC`;
+
   const { rows } = await db.query(sql, params);
   res.json(rows);
 });
 
-// Statistika PDV-a po periodima
-// --- AI tumačenje glasovnih komandi sa ekstrakcijom entiteta ---
-app.post('/api/ai/command', async (req, res) => {
-  console.log('[AI/COMMAND] --- NOVI ZAHTEV ---');
-  console.log('[AI/COMMAND] process.env.GROQ_API_KEY:', process.env.GROQ_API_KEY ? 'POSTOJI' : 'NE POSTOJI');
-  const { text } = req.body;
-  console.log('[AI/COMMAND] Primljen tekst:', text);
-  console.log('[AI/COMMAND] Pripremam telo za GroqCloud...');
-  if (!text) return res.status(400).json({ error: 'Nedostaje tekst komande.' });
-  // Uklonjeno: Više nije potrebna provera za OPENAI_API_KEY, koristi se samo GROQ_API_KEY
+// Statistika rashoda po kategorijama
+app.get('/api/statistics/expenses', async (req, res) => {
+  const db = await getDb();
+  const { dateFrom, dateTo } = req.query;
 
-  // Novi čist system prompt
-  const systemPrompt = "Si slovenský účtovnícky asistent. Odpovedaj stručne a profesionálne.";
+  let sql = `SELECT expense_category, COUNT(*) AS count, SUM(total_amount) AS total, AVG(total_amount) AS avg 
+             FROM input_invoices WHERE 1=1`;
+  const params = [];
 
-  // Helper za timeout
-  async function fetchWithTimeout(resource, options = {}, timeout = 20000) {
-    const controller = new AbortController();
-    const id = setTimeout(() => controller.abort(), timeout);
-    try {
-      const response = await nodeFetch(resource, { ...options, signal: controller.signal });
-      clearTimeout(id);
-      return response;
-    } catch (err) {
-      clearTimeout(id);
-      throw err;
-    }
+  if (dateFrom) {
+    sql += ` AND payment_date >= $${params.length + 1}`;
+    params.push(dateFrom);
+  }
+  if (dateTo) {
+    sql += ` AND payment_date <= $${params.length + 1}`;
+    params.push(dateTo);
   }
 
-  try {
+  sql += ` GROUP BY expense_category ORDER BY total DESC`;
 
-    // 1. AI odgovor (Llama-3.3-70B-Versatile, GroqCloud)
-    const aiBody = {
-      model: 'Llama-3.3-70B-Versatile',
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: text }
-      ],
-      temperature: 0.2,
-      max_tokens: 1024
-    };
-    console.log('[AI/COMMAND] Šaljem zahtev GroqCloud Llama-3.3-70B-Versatile...');
-    console.log('[AI/COMMAND] aiBody:', aiBody);
-    let aiRes;
-    try {
-      aiRes = await fetchWithTimeout('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.GROQ_API_KEY}`
-        },
-        body: JSON.stringify(aiBody)
-      }, 20000);
-    } catch (err) {
-      console.error('[AI/COMMAND] FETCH ERROR (GroqCloud):', err);
-      return res.status(500).json({ error: 'Fetch error GroqCloud', details: err.message });
-    }
-    const aiData = await aiRes.json();
-    console.log('[AI/COMMAND] aiRes.ok:', aiRes.ok);
-    console.log('[AI/COMMAND] aiData:', aiData);
-    if (!aiRes.ok) {
-      console.error('[AI/COMMAND] Greška GroqCloud:', aiData);
-      return res.status(500).json({ error: 'Greška GroqCloud API', details: aiData });
-    }
-    // GroqCloud vraća odgovor u aiData.choices[0].message.content
-    const aiAnswer = aiData.choices?.[0]?.message?.content?.trim() || '';
-    console.log('[AI/COMMAND] AI odgovor:', aiAnswer);
+  const { rows } = await db.query(sql, params);
+  res.json(rows);
+});
 
-    // Loguj u bazu
-    try {
-      const db = await getDb?.();
-      if (db) await db.query('INSERT INTO logs (type, message, timestamp) VALUES ($1, $2, $3)', ['ai', `[AI/COMMAND] Upit: ${text}\nOdgovor: ${aiAnswer}`, new Date()]);
-    } catch (e) { console.log('Log error', e); }
+// Statistika prihoda po kategorijama
+app.get('/api/statistics/income', async (req, res) => {
+  const db = await getDb();
+  const { dateFrom, dateTo } = req.query;
 
-    res.json({ answer: aiAnswer });
-  } catch (err) {
-    console.error('[AI/COMMAND] Fatalna greška:', err);
-    res.status(500).json({ error: 'Greška u AI obradi', details: err.message });
+  let sql = `SELECT customer, COUNT(*) AS count, SUM(total_amount) AS total, AVG(total_amount) AS avg 
+             FROM output_invoices WHERE 1=1`;
+  const params = [];
+
+  if (dateFrom) {
+    sql += ` AND issue_date >= $${params.length + 1}`;
+    params.push(dateFrom);
   }
+  if (dateTo) {
+    sql += ` AND issue_date <= $${params.length + 1}`;
+    params.push(dateTo);
+  }
+
+  sql += ` GROUP BY customer ORDER BY total DESC`;
+
+  const { rows } = await db.query(sql, params);
+  res.json(rows);
 });
 
 // GET /api/logs — prikaz logova
 app.get('/api/logs', async (req, res) => {
   const db = await getDb();
-  const { rows } = await db.query('SELECT l.*, u.username FROM logs l LEFT JOIN users u ON l.user_id = u.id ORDER BY l.timestamp DESC');
+  const { rows } = await db.query(
+    'SELECT l.*, u.username FROM logs l LEFT JOIN users u ON l.user_id = u.id ORDER BY l.timestamp DESC'
+  );
   res.json(rows);
 });
+
 // POST /api/users — dodavanje korisnika
 app.post('/api/users', auditLogMiddleware, async (req, res) => {
   try {
     const db = await getDb();
     const { username, email, password } = req.body;
+
     if (!username || !email || !password) {
       return res.status(400).json({ error: 'Nedostaju obavezna polja.' });
     }
-    const { rows: userRows } = await db.query('SELECT * FROM users WHERE email = $1 OR username = $2', [email, username]);
+
+    const { rows: userRows } = await db.query(
+      'SELECT * FROM users WHERE email = $1 OR username = $2',
+      [email, username]
+    );
+
     if (userRows.length > 0) {
       return res.status(409).json({ error: 'Korisnik sa tim emailom ili username već postoji.' });
     }
+
     const hash = await bcrypt.hash(password, 10);
-    await db.query('INSERT INTO users (username, email, password_hash) VALUES ($1, $2, $3)', [username, email, hash]);
+
+    await db.query(
+      'INSERT INTO users (username, email, password_hash) VALUES ($1, $2, $3)',
+      [username, email, hash]
+    );
+
     res.status(201).json({ message: 'Korisnik dodat.' });
   } catch (err) {
     console.error("Greška u POST /api/users:", err);
     res.status(500).json({ error: "Greška na serveru." });
   }
 });
+
 
 // GET /api/users — lista svih korisnika
 app.get('/api/users', async (req, res) => {
@@ -793,19 +836,34 @@ app.put('/api/users/:id', auditLogMiddleware, async (req, res) => {
   try {
     const db = await getDb();
     const { username, email, password } = req.body;
+
     if (!username || !email) {
       return res.status(400).json({ error: 'Nedostaju obavezna polja.' });
     }
-    const { rows: userRows } = await db.query('SELECT * FROM users WHERE (email = $1 OR username = $2) AND id != $3', [email, username, req.params.id]);
+
+    const { rows: userRows } = await db.query(
+      'SELECT * FROM users WHERE (email = $1 OR username = $2) AND id != $3',
+      [email, username, req.params.id]
+    );
+
     if (userRows.length > 0) {
       return res.status(409).json({ error: 'Email ili username već postoji.' });
     }
+
     let hash = password ? await bcrypt.hash(password, 10) : null;
+
     if (hash) {
-      await db.query('UPDATE users SET username=$1, email=$2, password_hash=$3 WHERE id=$4', [username, email, hash, req.params.id]);
+      await db.query(
+        'UPDATE users SET username=$1, email=$2, password_hash=$3 WHERE id=$4',
+        [username, email, hash, req.params.id]
+      );
     } else {
-      await db.query('UPDATE users SET username=$1, email=$2 WHERE id=$3', [username, email, req.params.id]);
+      await db.query(
+        'UPDATE users SET username=$1, email=$2 WHERE id=$3',
+        [username, email, req.params.id]
+      );
     }
+
     res.json({ message: 'Korisnik izmenjen.' });
   } catch (err) {
     console.error("Greška u PUT /api/users:", err);
@@ -830,6 +888,7 @@ app.get('/api/export/invoices', async (req, res) => {
   const db = await getDb();
   const format = req.query.format || 'csv';
   const { rows } = await db.query('SELECT * FROM output_invoices');
+
   if (format === 'csv') {
     const csv = stringify(rows, { header: true, delimiter: ',' });
     res.setHeader('Content-Type', 'text/csv');
@@ -853,6 +912,7 @@ app.get('/api/export/ledger', async (req, res) => {
   const db = await getDb();
   const format = req.query.format || 'csv';
   const { rows } = await db.query('SELECT * FROM input_invoices');
+
   if (format === 'csv') {
     const csv = stringify(rows, { header: true, delimiter: ',' });
     res.setHeader('Content-Type', 'text/csv');
@@ -870,28 +930,35 @@ app.get('/api/export/ledger', async (req, res) => {
     return res.status(400).json({ error: 'Nepodržan format.' });
   }
 });
+
 // Napredna pretraga ulaznih faktura
 app.get('/api/fakture/search', async (req, res) => {
   const db = await getDb();
   const { query, invoice_number, supplier, status } = req.query;
+
   let sql = `SELECT * FROM input_invoices WHERE 1=1`;
   const params = [];
+
   if (query) {
     sql += ` AND (supplier ILIKE $${params.length + 1} OR invoice_number ILIKE $${params.length + 1})`;
     params.push(`%${query}%`);
   }
+
   if (invoice_number) {
     sql += ` AND invoice_number ILIKE $${params.length + 1}`;
     params.push(`%${invoice_number}%`);
   }
+
   if (supplier) {
     sql += ` AND supplier ILIKE $${params.length + 1}`;
     params.push(`%${supplier}%`);
   }
+
   if (status) {
     sql += ` AND status = $${params.length + 1}`;
     params.push(status);
   }
+
   const { rows } = await db.query(sql, params);
   res.json(rows);
 });
@@ -900,24 +967,30 @@ app.get('/api/fakture/search', async (req, res) => {
 app.get('/api/izlazne-fakture/search', async (req, res) => {
   const db = await getDb();
   const { query, invoice_number, customer, status } = req.query;
+
   let sql = `SELECT * FROM output_invoices WHERE 1=1`;
   const params = [];
+
   if (query) {
     sql += ` AND (customer ILIKE $${params.length + 1} OR invoice_number ILIKE $${params.length + 1})`;
     params.push(`%${query}%`);
   }
+
   if (invoice_number) {
     sql += ` AND invoice_number ILIKE $${params.length + 1}`;
     params.push(`%${invoice_number}%`);
   }
+
   if (customer) {
     sql += ` AND customer ILIKE $${params.length + 1}`;
     params.push(`%${customer}%`);
   }
+
   if (status) {
     sql += ` AND status = $${params.length + 1}`;
     params.push(status);
   }
+
   const { rows } = await db.query(sql, params);
   res.json(rows);
 });
@@ -925,38 +998,49 @@ app.get('/api/izlazne-fakture/search', async (req, res) => {
 // AI preporuke na osnovu predikcija i anomalija
 app.get('/api/recommendations', async (req, res) => {
   const db = await getDb();
-  // Lokalno izračunaj predikcije i anomalije
-  // --- predikcije ---
-  // (kopiraj logiku iz /api/anomalije za predikcije)
+
   const { rows } = await db.query('SELECT * FROM output_invoices');
   const amounts = rows.map(r => r.total_amount);
+
   const avg = amounts.reduce((a, b) => a + b, 0) / amounts.length;
   const std = Math.sqrt(amounts.reduce((a, b) => a + Math.pow(b - avg, 2), 0) / amounts.length);
-  // ... ovde bi išla logika za predikcije, koristi kao u /api/anomalije
-  // --- anomalije ---
-  // (kopiraj logiku iz /api/anomalije za anomalije)
-  // Pretpostavljamo da su zOutliers, delayed, abnormal već izračunati kao u /api/anomalije
-  // --- primer ---
+
   const predictions = {
     trendProfit: 'rast',
     trendExpense: 'pad',
     ciProfit: { min: 0 },
     predProfit: [1, 2, 3, 4, 5, 6],
   };
+
   const anomalies = {
     zOutliers: [],
     delayed: [],
     abnormal: [],
   };
+
   const advice = [];
-  if (predictions.trendProfit === 'pad') advice.push('Profit opada. Razmotrite smanjenje troškova ili povećanje prihoda.');
-  if (predictions.trendExpense === 'rast') advice.push('Rashodi rastu. Pratite troškove i optimizujte procese.');
-  if (predictions.ciProfit.min < 0) advice.push('Postoji rizik negativnog profita u narednom periodu.');
-  if (anomalies.zOutliers.length > 0) advice.push('Detektovane su transakcije sa abnormalnim iznosima (z-score). Proverite te fakture.');
-  if (anomalies.delayed.length > 0) advice.push('Postoje fakture sa velikim kašnjenjem. Pratite naplatu i rokove.');
-  if (anomalies.abnormal.length > 0) advice.push('Abnormalne transakcije iznad proseka. Proverite razloge.');
+
+  if (predictions.trendProfit === 'pad')
+    advice.push('Profit opada. Razmotrite smanjenje troškova ili povećanje prihoda.');
+
+  if (predictions.trendExpense === 'rast')
+    advice.push('Rashodi rastu. Pratite troškove i optimizujte procese.');
+
+  if (predictions.ciProfit.min < 0)
+    advice.push('Postoji rizik negativnog profita u narednom periodu.');
+
+  if (anomalies.zOutliers.length > 0)
+    advice.push('Detektovane su transakcije sa abnormalnim iznosima (z-score). Proverite te fakture.');
+
+  if (anomalies.delayed.length > 0)
+    advice.push('Postoje fakture sa velikim kašnjenjem. Pratite naplatu i rokove.');
+
+  if (anomalies.abnormal.length > 0)
+    advice.push('Abnormalne transakcije iznad proseka. Proverite razloge.');
+
   res.json({ advice });
 });
+
 
 // Automatska upozorenja za keš flou i kritične anomalije
 app.get('/api/alerts', async (req, res) => {
