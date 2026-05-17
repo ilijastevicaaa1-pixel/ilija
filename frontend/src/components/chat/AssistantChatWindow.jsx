@@ -381,6 +381,12 @@ function AssistantChatWindow({ onClose }) {
     // app rute: /ai/faktura
     const normalizedNumber = parseMenuNumber(trimmed);
     if (activeCategory === "fakturacia" && normalizedNumber === "1") {
+      // sačuvaj kontekst (da asistent pamti vetvu) pre prelaza na drugu rutu
+      setContext(prev => prev || {
+        category: "fakturacia",
+        suboption: subOptions.fakturacia["1"]
+      });
+
       setIsSending(false);
       // bez dodatnih AI poruka
       return window.location.assign("/ai/faktura");
