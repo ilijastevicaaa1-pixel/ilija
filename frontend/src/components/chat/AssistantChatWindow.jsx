@@ -377,6 +377,15 @@ function AssistantChatWindow({ onClose }) {
     const activeCategory = selectedCategory;
     const fixedReply = resolveSubOptionReply(activeCategory, trimmed);
 
+    // Navigacija na konkretne funkcije (npr. vytvaranie faktur) umesto AI odgovora
+    // app rute: /ai/faktura
+    const normalizedNumber = parseMenuNumber(trimmed);
+    if (activeCategory === "fakturacia" && normalizedNumber === "1") {
+      setIsSending(false);
+      // bez dodatnih AI poruka
+      return window.location.assign("/ai/faktura");
+    }
+
     // Ako je izabrana podopcija, prikaži info + ipak zovi AI
     if (fixedReply) {
       setMessages(prev => [...prev, { role: "assistant", text: fixedReply }]);
