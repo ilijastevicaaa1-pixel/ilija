@@ -71,22 +71,23 @@ router.post('/command', async (req, res) => {
     });
 
 
-    if (!apiKey) {
-      // Ne blokiraj "pozdrav" i sitne poruke kad AI nije podešen.
-      // Ovo sprečava 500 na frontu (npr. "ahoj").
-      const t = String(text).toLowerCase();
-      if (
-        t.includes('ahoj') ||
-        t.includes('hello') ||
-        t.includes('dobry den') ||
-        t.includes('dobrý deň') ||
-        t.includes('zdrav') ||
-        t.includes('nazdrav') ||
-        t.includes('pozdrav')
-      ) {
-        return res.json({ reply: 'Dobrý deň! Vyberte prosím číslo z menu.' });
-      }
+    // --- POZDRAV / MENU (neposielať do AI) ---
+    // Model občas vráti JSON s `action: "hello"`, ktoré backend nepozná.
+    // Takéto krátke správy vždy vyriešime deterministicky.
+    const t = String(text).toLowerCase();
+    if (
+      t.includes('ahoj') ||
+      t.includes('hello') ||
+      t.includes('dobry den') ||
+      t.includes('dobrý deň') ||
+      t.includes('zdrav') ||
+      t.includes('nazdrav') ||
+      t.includes('pozdrav')
+    ) {
+      return res.json({ reply: 'Dobrý deň! Vyberte prosím číslo z menu.' });
+    }
 
+    if (!apiKey) {
       return res.status(500).json({ error: 'AI ključ nije konfigurisan.' });
     }
 
@@ -141,9 +142,9 @@ router.post('/command', async (req, res) => {
           return { message: 'MATCH_BANK još nije implementiran na backendu.' };
 
         default:
-           return { message: 'Neznáma akcia: ' + action + '. Skús jednu z dostupných akcií: LIST_INVOICES, ANALYZE_VAT, SUGGEST_LEDGER, MONTHLY_REPORT, YEARLY_REPORT, CUSTOM_REPORT, MATCH_BANK.' };
-       }
-     }
+          return { message: 'Neznáma akcia: ' + action + '. Skús jednu z dostupných akcií: LIST_INVOICES, ANALYZE_VAT, SUGGEST_LEDGER, MONTHLY_REPORT, YEARLY_REPORT, CUSTOM_REPORT, MATCH_BANK.' };
+      }
+    }
 
     // ===============================
     //  PRIPREMA PORUKA SA KONTEKSTOM
