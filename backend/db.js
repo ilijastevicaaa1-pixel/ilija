@@ -27,7 +27,9 @@ console.log("========================");
 const poolConfig = process.env.DATABASE_URL
   ? {
     connectionString: process.env.DATABASE_URL,
-    ssl: { rejectUnauthorized: false }
+    ssl: process.env.DATABASE_URL.toLowerCase().includes('sslmode=require')
+      ? { rejectUnauthorized: false }
+      : undefined
   }
   : {
     host: process.env.PG_HOST,

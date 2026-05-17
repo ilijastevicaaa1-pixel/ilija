@@ -20,7 +20,7 @@ function LoginScreen() {
     setLoading(true);
 
     try {
-      const data = await apiFetch("/login", {
+      const data = await apiFetch("/api/login", {
         method: "POST",
         body: { email, password },
       });
