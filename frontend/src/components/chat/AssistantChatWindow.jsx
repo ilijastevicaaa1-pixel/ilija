@@ -428,14 +428,14 @@ function AssistantChatWindow({ onClose }) {
     const normalizedTrimmed = normalizeText(trimmed);
     const isMenuOnlyNumber = /^([1-9]|10|11)$/.test(normalizedTrimmed);
 
-    const shouldSkipAI =
-      (activeCategory && isMenuOnlyNumber) ||
-      (!!fixedReply && activeCategory);
-
-    if (shouldSkipAI) {
+    // Ne preskači AI kad je korisnik u meniju i unese samo broj.
+    // AI treba da razume pod-opciju (npr. dph.vypocet) i da vrati pravi odgovor.
+    // Skip AI ostavljamo samo za slučaj kad je već izvršena eksplicitna podopcija (fixedReply).
+    if (!!fixedReply && activeCategory && !isMenuOnlyNumber) {
       setIsSending(false);
       return;
     }
+
 
     // ----------------------
     // POZIV AI BACKENDU
