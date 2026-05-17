@@ -45,35 +45,81 @@ const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
 router.post('/command', async (req, res) => {
-  try {
-    const { text, context } = req.body;
+   try {
+     const { text, context } = req.body;
 
-    console.log('[AI /command] FULL REQUEST BODY:', req.body);
+     console.log('[AI /command] FULL REQUEST BODY:', req.body);
 
-    console.log('[AI /command] text/context presence:', {
-      hasText: typeof text === 'string' && text.trim().length > 0,
-      hasContext: !!context
-    });
+     console.log('[AI /command] text/context presence:', {
+       hasText: typeof text === 'string' && text.trim().length > 0,
+       hasContext: !!context
+     });
 
-    if (!text) {
-      return res.status(400).json({ error: 'Nema teksta.' });
-    }
+     if (!text) {
+       return res.status(400).json({ error: 'Nema teksta.' });
+     }
 
-    const apiKey = GROQ_API_KEY || OPENAI_API_KEY;
-    console.log('[AI /command] apiKey config:', {
-      GROQ_API_KEY_set: !!GROQ_API_KEY,
-      OPENAI_API_KEY_set: !!OPENAI_API_KEY,
-      usingGroq: !!GROQ_API_KEY
-    });
+     const apiKey = GROQ_API_KEY || OPENAI_API_KEY;
+     console.log('[AI /command] apiKey config:', {
+       GROQ_API_KEY_set: !!GROQ_API_KEY,
+       OPENAI_API_KEY_set: !!OPENAI_API_KEY,
+       usingGroq: !!GROQ_API_KEY
+     });
 
-    if (!apiKey) {
-      return res.status(500).json({ error: 'AI ključ nije konfigurisan.' });
-    }
+     if (!apiKey) {
+       return res.status(500).json({ error: 'AI ključ nije konfigurisan.' });
+     }
 
+     // --- ACTION PARSER ---
+     function tryParseJSON(text) {
+       try {
+         return JSON.parse(text);
+       } catch {
+         return null;
+       }
+     }
 
-    // ===============================
-    //  PRIPREMA PORUKA SA KONTEKSTOM
-    // ===============================
+     async function executeAction(action, params) {
+       switch (action) {
+         case "LIST_INVOICES":
+           return await fetch("http://localhost:3001/api/fakture").then(r => r.json());
+
+         case "ANALYZE_VAT":
+           return await fetch("http://localhost:3001/api/vat/analyze", {
+             method: "POST",
+             headers: { "Content-Type": "application/json" },
+             body: JSON.stringify(params)
+           }).then(r => r.json());
+
+         case "SUGGEST_LEDGER":
+           return await fetch("http://localhost:3001/api/ledger/suggest", {
+             method: "POST",
+             headers: { "Content-Type": "application/json" },
+             body: JSON.stringify(params)
+           }).then(r => r.json());
+
+         case "MONTHLY_REPORT":
+           return await fetch("http://localhost:3001/api/reports/monthly").then(r => r.json());
+
+         case "YEARLY_REPORT":
+           return await fetch("http://localhost:3001/api/reports/yearly").then(r => r.json());
+
+         case "CUSTOM_REPORT":
+           return await fetch(`http://localhost:3001/api/reports/custom?dateFrom=${params.dateFrom}&dateTo=${params.dateTo}`)
+             .then(r => r.json());
+
+         case "MATCH_BANK":
+           return await fetch("http://localhost:3001/api/matching", {
+             method: "POST"
+           }).then(r => r.json());
+
+         default:
+           return { message: "Neznáma akcia." };
+       }
+     }
+     // ===============================
+     //  PRIPREMA PORUKA SA KONTEKSTOM
+     // ===============================
     const messages = [
       {
         role: 'system',
@@ -151,13 +197,24 @@ router.post('/command', async (req, res) => {
       return res.status(400).json({ reply: aiData.error.message || 'Greška u AI.' });
     }
 
-    const reply =
-      aiData.choices?.[0]?.message?.content || 'AI odpoveď nie je dostupná.';
+     const reply =
+       aiData.choices?.[0]?.message?.content || 'AI odpoveď nie je dostupná.';
 
-    // ===============================
-    //  EKSTRAKCIJA NOVOG KONTEKSTA
-    // ===============================
-    const newContext = extractContext(reply, context);
+     // Pokušaj da parsiraš JSON akciju
+     const parsed = tryParseJSON(reply);
+
+     if (parsed && parsed.action) {
+       const result = await executeAction(parsed.action, parsed.params || {});
+       return res.json({
+         answer: JSON.stringify(result, null, 2),
+         context: parsed.context || null
+       });
+     }
+
+     // ===============================
+     //  EKSTRAKCIJA NOVOG KONTEKSTA
+     // ===============================
+     const newContext = extractContext(reply, context);
 
     console.log('=== FINAL AI RESPONSE ===');
     console.log('reply:', reply);
