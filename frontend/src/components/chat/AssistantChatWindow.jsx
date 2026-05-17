@@ -356,6 +356,135 @@ function AssistantChatWindow({ onClose }) {
   // ----------------------
   // MICROPHONE
   // ----------------------
+  const sendMessage = async (textOverride) => {
+    const trimmed = (typeof textOverride === "string" ? textOverride : input).trim();
+    if (!trimmed || isSending) return;
+
+    setMessages(prev => [...prev, { role: "user", text: trimmed }]);
+    setInput("");
+    setIsSending(true);
+
+    // Reset na glavni meni
+    if (isMainMenuCommand(trimmed)) {
+      setSelectedCategory(null);
+      setContext(null);
+      setMessages(prev => [...prev, { role: "assistant", text: greeting }]);
+      speak(greeting);
+      setIsSending(false);
+      return;
+    }
+
+    const activeCategory = selectedCategory;
+    const fixedReply = resolveSubOptionReply(activeCategory, trimmed);
+
+    // Navigacija na konkretne funkcije (npr. vytvaranie faktur)
+    const normalizedNumber = parseMenuNumber(trimmed);
+    if (activeCategory === "fakturacia" && normalizedNumber === "1") {
+      setContext(prev => prev || {
+        category: "fakturacia",
+        suboption: subOptions.fakturacia["1"]
+      });
+
+      setIsSending(false);
+      return window.location.assign("/ai/faktura");
+    }
+
+    // Ako je izabrana podopcija, prikaži info
+    if (fixedReply) {
+      setMessages(prev => [...prev, { role: "assistant", text: fixedReply }]);
+      speak(fixedReply);
+
+      const normalizedNumber = parseMenuNumber(trimmed);
+      if (activeCategory && normalizedNumber && subOptions[activeCategory][normalizedNumber]) {
+        setContext({
+          category: activeCategory,
+          suboption: subOptions[activeCategory][normalizedNumber]
+        });
+      }
+    }
+
+    // Ako je već izabrana kategorija i korisnik unosi broj → ponovo pokaži podmeni
+    if (activeCategory && parseMenuNumber(trimmed)) {
+      const retryMessage = formatSubOptions(activeCategory);
+      setMessages(prev => [...prev, { role: "assistant", text: retryMessage }]);
+      speak(retryMessage);
+    }
+
+    // Ako još nema kategorije → detektuj i prikaži podmeni
+    let categoryFromInput = null;
+    if (!selectedCategory) {
+      categoryFromInput = detectCategory(trimmed);
+      if (categoryFromInput && categoryFromInput !== "asistent") {
+        const optionMessage = formatSubOptions(categoryFromInput);
+        setMessages(prev => [...prev, { role: "assistant", text: optionMessage }]);
+        speak(optionMessage);
+        setSelectedCategory(categoryFromInput);
+        setIsSending(false);
+        return;
+      }
+    }
+
+    // Ako je korisnik izabrao opciju iz menija → ne zovemo AI
+    const normalizedTrimmed = normalizeText(trimmed);
+    const isMenuOnlyNumber = /^([1-9]|10|11)$/.test(normalizedTrimmed);
+    const isKnownSubOptionText = Object.values(subOptions).some(category => {
+      return Object.values(category).some(label => normalizeText(label) === normalizedTrimmed);
+    });
+
+    const shouldSkipAI = !!fixedReply || isMenuOnlyNumber || isKnownSubOptionText;
+
+    // IMPORTANT: Allow basic greetings (e.g. "hej", "zdravo") to still reach the backend.
+    // Otherwise the chat may appear to stop responding.
+    const t0 = normalizeText(trimmed);
+    const isGreeting = /^(hej|zdravo|dobar\s+dan|dobar\s+vecer|dobro\s+jutro|salut|yoo)$/.test(t0);
+
+    if (shouldSkipAI && !isGreeting) {
+      setIsSending(false);
+      return;
+    }
+
+    // ----------------------
+    // POZIV AI BACKENDU
+    // ----------------------
+    try {
+      const data = await apiFetch("/api/ai/command", {
+        method: "POST",
+        body: {
+          text: trimmed,
+          context
+        }
+      });
+
+      const reply = data.reply || data.answer || "";
+      if (reply) {
+        setMessages(prev => [...prev, { role: "assistant", text: reply }]);
+        speak(reply);
+      }
+
+      if (data.context) {
+        setContext(data.context);
+      }
+
+
+      const cat = selectedCategory || categoryFromInput;
+      if (
+        (cat === "fakturacia") &&
+        (trimmed === "2" || trimmed.toLowerCase().includes("ocr"))
+      ) {
+        setTimeout(() => fileInputRef.current?.click(), 250);
+      }
+    } catch (err) {
+      const errorMessage = "Vyskytla sa chyba pri komunikacii so serverom.";
+      setMessages(prev => [...prev, { role: "assistant", text: errorMessage }]);
+      speak(errorMessage);
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  // ----------------------
+  // MICROPHONE
+  // ----------------------
   const toggleSpeech = () => {
     setSpeechError("");
     window.speechSynthesis?.cancel();
