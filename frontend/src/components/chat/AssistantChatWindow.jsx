@@ -127,49 +127,109 @@ function normalizeText(value) {
 }
 
 function parseMenuNumber(text) {
+  if (!text) return null;
+
   const normalized = normalizeText(text).replace(/[^\w\s]/g, " ");
   const compact = normalized.replace(/\s+/g, " ").trim();
 
+  // 1) direktno broj (1–11)
   const numberMatch = compact.match(/\b([1-9]|10|11)\b/);
   if (numberMatch) return numberMatch[1];
 
+  // 2) tokenizacija
   const tokens = compact.split(" ").filter(Boolean);
   const joined = tokens.join("");
 
-  const wordMap = {
-    jeden: "1",
-    jedna: "1",
-    jedno: "1",
-    dva: "2",
-    tri: "3",
-    cetiri: "4",
-    pet: "5",
-    sest: "6",
-    sedam: "7",
-    osam: "8",
-    devet: "9",
-    deset: "10",
-    jedanaest: "11",
-    dve: "2",
-    styri: "4",
-    pat: "5",
-    sedem: "7",
-    osem: "8",
-    devat: "9",
-    desat: "10",
-    jedenast: "11"
-  };
-
+  // 3) slovné čísla → čísla
   for (const token of tokens) {
-    if (token === "jedna") return "1";
-    if (token === "sest") return "6";
     if (wordMap[token]) return wordMap[token];
   }
 
+  // 4) spojený tvar (napr. "jedenast")
   if (wordMap[joined]) return wordMap[joined];
+
   return null;
 }
 
+function extractNumber(input) {
+  if (!input) return null;
+
+  const normalized = input
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+
+  const tokens = normalized.split(/\s+/);
+  const joined = normalized.replace(/\s+/g, "");
+
+  // 1) token po token
+  for (const token of tokens) {
+    if (wordMap[token]) return wordMap[token];
+    if (!isNaN(token)) return token;
+  }
+
+  // 2) spojeni tvar
+  if (wordMap[joined]) return wordMap[joined];
+
+  return null;
+}
+
+
+// ----------------------
+// SLOVENSKÝ WORD MAP
+// ----------------------
+const wordMap = {
+  jeden: "1",
+  jedna: "1",
+  jedno: "1",
+  dva: "2",
+  dve: "2",
+  tri: "3",
+  styri: "4",
+  štyri: "4",
+  pat: "5",
+  päť: "5",
+  sest: "6",
+  šesť: "6",
+  sedem: "7",
+  osem: "8",
+  devat: "9",
+  deväť: "9",
+  desat: "10",
+  desať: "10",
+  jedenast: "11",
+  jedenásť: "11"
+};
+
+// ----------------------
+// EXTRACT NUMBER
+// ----------------------
+function extractNumber(input) {
+  if (!input) return null;
+
+  const normalized = input
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+
+  const tokens = normalized.split(/\s+/);
+  const joined = normalized.replace(/\s+/g, "");
+
+  // 1) token po token
+  for (const token of tokens) {
+    if (wordMap[token]) return wordMap[token];
+    if (!isNaN(token)) return token;
+  }
+
+  // 2) spojeni tvar (napr. "jedenast")
+  if (wordMap[joined]) return wordMap[joined];
+
+  return null;
+}
+
+// ----------------------
+// DETECT CATEGORY
+// ----------------------
 function detectCategory(text) {
   const t = normalizeText(text);
   const menuNumber = parseMenuNumber(text);
@@ -201,6 +261,9 @@ function detectCategory(text) {
   return null;
 }
 
+// ----------------------
+// SUBOPTION FORMATTER
+// ----------------------
 function formatSubOptions(categoryKey) {
   const options = subOptions[categoryKey];
   if (!options) return "";
@@ -208,17 +271,21 @@ function formatSubOptions(categoryKey) {
   return `Vybrali ste: ${categoryKey}\nDostupné možnosti:\n${lines.join("\n")}`;
 }
 
+// ----------------------
+// SUBOPTION RESOLVER
+// ----------------------
 function resolveSubOptionReply(categoryKey, text) {
   if (!categoryKey || !subOptions[categoryKey]) return null;
   const normalizedNumber = parseMenuNumber(text);
   const direct = normalizedNumber ? subOptions[categoryKey][normalizedNumber] : null;
   if (!direct) return null;
 
-  // Ne prikazuj “Rozumiem…” (UI spam). Umesto toga samo potvrdi izbor.
   return `Vybrali ste: ${direct}.`;
 }
 
-
+// ----------------------
+// MAIN MENU COMMAND
+// ----------------------
 function isMainMenuCommand(text) {
   const t = text.toLowerCase().trim();
   return (
