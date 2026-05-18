@@ -126,54 +126,16 @@ function normalizeText(value) {
     .trim();
 }
 
-function parseMenuNumber(text) {
-  if (!text) return null;
-
-  const normalized = normalizeText(text).replace(/[^\w\s]/g, " ");
-  const compact = normalized.replace(/\s+/g, " ").trim();
-
-  // 1) direktno broj (1–11)
-  const numberMatch = compact.match(/\b([1-9]|10|11)\b/);
-  if (numberMatch) return numberMatch[1];
-
-  // 2) tokenizacija
-  const tokens = compact.split(" ").filter(Boolean);
-  const joined = tokens.join("");
-
-  // 3) slovné čísla → čísla
-  for (const token of tokens) {
-    if (wordMap[token]) return wordMap[token];
-  }
-
-  // 4) spojený tvar (napr. "jedenast")
-  if (wordMap[joined]) return wordMap[joined];
-
-  return null;
-}
-
-function extractNumber(input) {
-  if (!input) return null;
-
-  const normalized = input
+// ----------------------
+// HELPERS
+// ----------------------
+function normalizeText(value) {
+  return (value || "")
     .toLowerCase()
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
-
-  const tokens = normalized.split(/\s+/);
-  const joined = normalized.replace(/\s+/g, "");
-
-  // 1) token po token
-  for (const token of tokens) {
-    if (wordMap[token]) return wordMap[token];
-    if (!isNaN(token)) return token;
-  }
-
-  // 2) spojeni tvar
-  if (wordMap[joined]) return wordMap[joined];
-
-  return null;
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim();
 }
-
 
 // ----------------------
 // SLOVENSKÝ WORD MAP
@@ -202,7 +164,35 @@ const wordMap = {
 };
 
 // ----------------------
-// EXTRACT NUMBER
+// PARSE MENU NUMBER
+// ----------------------
+function parseMenuNumber(text) {
+  if (!text) return null;
+
+  const normalized = normalizeText(text).replace(/[^\w\s]/g, " ");
+  const compact = normalized.replace(/\s+/g, " ").trim();
+
+  // 1) direktno broj (1–11)
+  const numberMatch = compact.match(/\b([1-9]|10|11)\b/);
+  if (numberMatch) return numberMatch[1];
+
+  // 2) tokenizacija
+  const tokens = compact.split(" ").filter(Boolean);
+  const joined = tokens.join("");
+
+  // 3) slovné čísla → čísla
+  for (const token of tokens) {
+    if (wordMap[token]) return wordMap[token];
+  }
+
+  // 4) spojeni tvar (napr. "jedenast")
+  if (wordMap[joined]) return wordMap[joined];
+
+  return null;
+}
+
+// ----------------------
+// EXTRACT NUMBER (STT + AI)
 // ----------------------
 function extractNumber(input) {
   if (!input) return null;
@@ -221,7 +211,7 @@ function extractNumber(input) {
     if (!isNaN(token)) return token;
   }
 
-  // 2) spojeni tvar (napr. "jedenast")
+  // 2) spojeni tvar
   if (wordMap[joined]) return wordMap[joined];
 
   return null;
