@@ -115,16 +115,6 @@ function speak(text) {
   window.speechSynthesis.speak(u);
 }
 
-// ----------------------
-// HELPERS
-// ----------------------
-function normalizeText(value) {
-  return (value || "")
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .trim();
-}
 
 // ----------------------
 // HELPERS
