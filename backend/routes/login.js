@@ -33,7 +33,12 @@ router.post("/login", async (req, res) => {
       return res.status(400).json({ message: "Pogrešna lozinka" });
     }
 
-    const jwtSecret = process.env.JWT_SECRET || "dev_secret_key";
+    const jwtSecret = process.env.JWT_SECRET || process.env.dev_secret_key || "";
+
+    if (!jwtSecret) {
+      console.error("JWT secret missing (JWT_SECRET/dev_secret_key)");
+      return res.status(500).json({ message: "Greška na serveru" });
+    }
 
     const token = jwt.sign(
       {
@@ -42,7 +47,6 @@ router.post("/login", async (req, res) => {
         role: user.role || null,
         tenantId: user.tenantid || user.tenant_id || null,
       },
-
       jwtSecret,
       { expiresIn: "7d" }
     );
