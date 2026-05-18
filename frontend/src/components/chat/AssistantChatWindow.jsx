@@ -1,21 +1,24 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { apiFetch } from "../../api.js";
 
+
 const greeting =
-  "Dobry den, ako vam mozem pomoct?\n" +
-  "Ponukam tieto sluzby:\n" +
-  "1) Fakturacia\n" +
-  "2) Bankove operacie\n" +
+  "Dobrý deň...\n\n" +
+  "Ako vám môžem pomôcť?\n\n" +
+  "Ponúkam tieto služby:\n" +
+  "1) Fakturácia\n" +
+  "2) Bankové operácie\n" +
   "3) DPH\n" +
-  "4) Vydavky\n" +
-  "5) Prijmy\n" +
+  "4) Výdavky\n" +
+  "5) Príjmy\n" +
   "6) Reporty\n" +
   "7) Dokumenty\n" +
-  "8) Zakaznici\n" +
+  "8) Zákazníci\n" +
   "9) Projekty\n" +
   "10) Asistent\n" +
-  "11) Skladove hospodarstvo\n\n" +
-  "Prosim, vyberte si jednu z moznosti (napiste cislo).";
+  "11) Skladové hospodárstvo\n\n" +
+  "Prosím, vyberte si jednu z možností (napíšte číslo).";
+
 
 const subOptions = {
   fakturacia: {
@@ -224,24 +227,36 @@ function AssistantChatWindow({ onClose }) {
 
     const utterance = new window.SpeechSynthesisUtterance(text);
     const voices = voicesRef.current;
+
+    // 🔹 1. Izbor NAJBOLJEG slovačkog glasa
     const preferredVoice =
-      voices.find((voice) => voice.lang?.toLowerCase().startsWith("sk")) ||
-      voices.find((voice) => voice.lang?.toLowerCase().startsWith("cs")) ||
-      voices.find((voice) => voice.lang?.toLowerCase().startsWith("sr"));
+      voices.find((v) =>
+        v.lang?.toLowerCase().includes("sk") &&
+        v.name?.toLowerCase().includes("microsoft")
+      ) ||
+      voices.find((v) => v.lang?.toLowerCase().startsWith("sk")) ||
+      voices.find((v) => v.lang?.toLowerCase().startsWith("cs"));
 
     if (preferredVoice) utterance.voice = preferredVoice;
+
+    // 🔹 2. Jezik
     utterance.lang = preferredVoice?.lang || "sk-SK";
-    utterance.rate = 1;
+
+    // 🔹 3. SPORIJE I JASNIJE
+    utterance.rate = 0.85;   // idealno za slovački
     utterance.pitch = 1;
+
+    // 🔹 4. Ne sme da pojede prvu reč
+    window.speechSynthesis.cancel();
+    setTimeout(() => {
+      window.speechSynthesis.speak(utterance);
+    }, 150);
 
     utterance.onerror = () => {
       if (text === greeting) needsGreetingRetryRef.current = true;
     };
 
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(utterance);
-
-    // If browser blocks autoplay, queue may stay empty after speak()
+    // 🔹 5. Ako browser blokira autoplay
     if (text === greeting) {
       setTimeout(() => {
         if (!window.speechSynthesis.speaking && !window.speechSynthesis.pending) {
@@ -439,7 +454,7 @@ function AssistantChatWindow({ onClose }) {
 
   return (
     <>
-      <link rel="stylesheet" href="/src/styles/chat-modern.css" />
+
       <div className="modern-chat-overlay" role="dialog" aria-modal="true" onClick={onClose}>
         <section className="modern-chat-panel" onClick={(e) => e.stopPropagation()}>
           <header className="modern-chat-header">
@@ -512,4 +527,3 @@ function AssistantChatWindow({ onClose }) {
 }
 
 export default AssistantChatWindow;
-

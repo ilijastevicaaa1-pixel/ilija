@@ -1,0 +1,8 @@
+PG_HOST=localhost
+PG_USER=postgres
+PG_PASSWORD=lozinka
+PG_DATABASE=knjigovodstvo
+PG_PORT=5432
+
+# Ako koristiš Render:
+DATABASE_URL=postgres://USER:PASSWORD@HOST:PORT/DATABASE
