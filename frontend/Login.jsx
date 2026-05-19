@@ -19,7 +19,9 @@ export default function Login() {
         body: JSON.stringify({ email, password })
       });
 
-      localStorage.setItem("jwt", res.data.token);
+      // kompatibilita s ostatným frontendom (api.js očakáva localStorage key "token")
+      localStorage.setItem("token", res.data.token);
+      localStorage.removeItem("jwt");
       window.location.href = "/dashboard";
     } catch (err) {
       setError("Pogrešan email/lozinka. Test: ilijastevicaaa1@gmail.com / 123456");
