@@ -5,6 +5,10 @@ import React, {
   useState
 } from "react";
 import { apiFetch } from "../../api.js";
+import AIExtractionModal from "../AIExtractionModal.jsx";
+
+
+
 
 
 
