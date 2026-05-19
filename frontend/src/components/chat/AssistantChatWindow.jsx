@@ -4,7 +4,7 @@ import React, {
   useRef,
   useState
 } from "react";
-import { apiFetch } from "../../api.js";
+import { apiFetch } from "../../api/apiFetch.js";
 import AIExtractionModal from "../AIExtractionModal.jsx";
 
 // ----------------------
