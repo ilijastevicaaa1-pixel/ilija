@@ -284,6 +284,46 @@ function isMainMenuCommand(text) {
 // ----------------------
 // COMPONENT
 // ----------------------
+// Global session state (NEVER reset between menu steps)
+let currentCategory = null;
+let currentSubOption = null;
+
+function resetAssistant() {
+  currentCategory = null;
+  currentSubOption = null;
+}
+
+function processAssistantMessage(input) {
+  const text = normalizeText(input);
+
+  // 1) Ako kategorija NIJE izabrana → biramo kategoriju
+  if (!currentCategory) {
+    const detected = detectCategory(text);
+    if (!detected) return greeting;
+    currentCategory = detected;
+    currentSubOption = null;
+    return formatSubOptions(detected);
+  }
+
+  // 2) Ako pod-opcija NIJE izabrana → biramo pod-opciju
+  if (!currentSubOption) {
+    const num = parseMenuNumber(text);
+    const options = subOptions[currentCategory];
+    const selected = num && options ? options[num] : null;
+
+    if (!selected) {
+      return "Neplatná voľba. Prosím vyberte číslo z ponuky.";
+    }
+
+    currentSubOption = selected;
+    return `Vybrali ste: ${selected}.`;
+  }
+
+  // 3) Pod-opcija už je vybraná → sem idie logika za tú konkrétnu pod-opciju
+  // Zatiaľ len fallback text (tu môžeš dopĺňať mapu pre všetky akcie)
+  return `Vybrali ste možnosť: ${currentSubOption}.`;
+}
+
 function AssistantChatWindow({ onClose }) {
   const [messages, setMessages] = useState([
     { role: "assistant", text: greeting }
@@ -410,6 +450,42 @@ function AssistantChatWindow({ onClose }) {
   // ----------------------
   // SEND MESSAGE
   // ----------------------
+  // Global session state (NEVER reset between menu steps)
+  let currentCategory = null;
+  let currentSubOption = null;
+
+  function resetAssistant() {
+    currentCategory = null;
+    currentSubOption = null;
+  }
+
+  function processAssistantMessage(input) {
+    const text = normalizeText(input);
+
+    if (!currentCategory) {
+      const detected = detectCategory(text);
+      if (!detected) return greeting;
+      currentCategory = detected;
+      currentSubOption = null;
+      return formatSubOptions(detected);
+    }
+
+    if (!currentSubOption) {
+      const num = parseMenuNumber(text);
+      const options = subOptions[currentCategory];
+      const selected = num && options ? options[num] : null;
+
+      if (!selected) return "Neplatná voľba. Prosím vyberte číslo z ponuky.";
+
+      currentSubOption = selected;
+      return `Vybrali ste: ${selected}.`;
+    }
+
+    // Tu ide logika za pod-opciu (zatiaľ fallback text)
+    // Dôležité: Nesmie sa resetovať späť na main menu.
+    return `Vybrali ste možnosť: ${currentSubOption}. Pokračujem...`;
+  }
+
   const sendMessage = async (textOverride) => {
     const trimmed = (typeof textOverride === "string" ? textOverride : input).trim();
     if (!trimmed || isSending) return;
