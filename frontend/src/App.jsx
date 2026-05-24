@@ -44,6 +44,7 @@ import TravelOrdersScreen from "./pages/TravelOrdersScreen";   // ⭐ DODATO
 // Manual Entry
 import ManualEntryScreen from "./screens/ManualEntryScreen.jsx";
 import BankaEntry from "./screens/manual/BankaEntry.jsx";
+import MiniAssistantScreen from "./pages/MiniAssistantScreen";
 
 function App() {
     return (
@@ -91,6 +92,9 @@ function App() {
                 {/* Manual Entry */}
                 <Route path="/manual-entry" element={<ProtectedRoute><ManualEntryScreen /></ProtectedRoute>} />
                 <Route path="/manual-entry/banka" element={<ProtectedRoute><BankaEntry /></ProtectedRoute>} />
+
+                {/* Mini assistant (test state machine) */}
+                <Route path="/mini-assistant" element={<ProtectedRoute><MiniAssistantScreen /></ProtectedRoute>} />
 
             </Routes>
         </Router>
