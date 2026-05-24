@@ -4,35 +4,69 @@ import React, { useState } from "react";
 let cat = null;
 let sub = null;
 
-function miniProcess(input) {
+async function askLlama(prompt) {
+    const res = await fetch("/api/ai/command", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt })
+    });
+
+    const data = await res.json();
+    return data.response || data.reply || "AI neodpovedá.";
+}
+
+async function executeOption(cat, sub, userInput) {
+    // FAKTURÁCIA
+    if (cat === "fakturacia" && sub === "A") {
+        return await askLlama("Vytvor faktúru podľa údajov: " + userInput);
+    }
+
+    if (cat === "fakturacia" && sub === "B") {
+        return "OCR placeholder (bez backendu).";
+    }
+
+    // BANKA
+    if (cat === "banka" && sub === "A") {
+        return await askLlama("Spracuj bankový výpis: " + userInput);
+    }
+
+    return "Táto funkcia ešte nie je implementovaná.";
+}
+
+export async function miniProcess(input) {
     const t = input.trim();
 
+    // 1) výber kategórie
     if (!cat) {
         if (t === "1") {
             cat = "fakturacia";
-            return "Vybral si fakturaciu. Zadaj pod-opciu.";
+            return "Vybral si fakturaciu. Zadaj pod-opciu (a/b).";
         }
         if (t === "2") {
             cat = "banka";
-            return "Vybral si banku. Zadaj pod-opciu.";
+            return "Vybral si banku. Zadaj pod-opciu (a/b).";
         }
         return "Menu: 1) fakturacia 2) banka";
     }
 
+    // 2) výber pod-opcie
     if (!sub) {
         if (t === "a") {
             sub = "A";
-            return "Vybral si A.";
+            return "Vybral si A. Zadaj údaje.";
         }
         if (t === "b") {
             sub = "B";
-            return "Vybral si B.";
+            return "Vybral si B. Zadaj údaje.";
         }
         return "Pod-opcie: a, b";
     }
 
-    return `Pokračujem v ${cat} / ${sub}…`;
+    // 3) vykonanie úlohy cez Llamu
+    return await executeOption(cat, sub, t);
 }
+
+
 
 export default function AssistantChatWindowMini() {
     const [messages, setMessages] = useState([
