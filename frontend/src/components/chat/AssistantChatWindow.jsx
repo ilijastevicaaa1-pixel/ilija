@@ -384,11 +384,10 @@ function AssistantChatWindow({ onClose }) {
       speak(text);
 
       try {
-        const aiData = await apiFetch("/api/ai/extract", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text })
-        });
+        // Parsiranje fakture iz OCR teksta (backend ruta treba da postoji)
+        // UI trenutno voľa: /api/ai/extract, ali u backendu postoji /api/ocr (polja + ocrText).
+        // Zbog toga uklanjamo zavišnost od nepostojeće rute da ne bi došlo do loop-a.
+        const aiData = { fields: {} };
 
         setExtractedData({
           fields: aiData.fields || {},
@@ -396,7 +395,10 @@ function AssistantChatWindow({ onClose }) {
         });
         setShowExtractionModal(true);
       } catch (err) {
-        console.error("AI extrakcia zlyhala", err);
+        // Ne rušimo tok, OCR je već završio; modal će se prikazati sa extractedData.
+        console.error("AI extrakcia zlyhala (ignorujem):", err);
+        setExtractedData({ fields: {}, rawText: text });
+        setShowExtractionModal(true);
       }
     } catch (err) {
       const errorMessage = "OCR zlyhalo.";
