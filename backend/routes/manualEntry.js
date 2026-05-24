@@ -4,6 +4,23 @@ import { auth } from '../authMiddleware.js';
 
 const router = express.Router();
 
+// POST /api/manual-entry - Ručni unos (manual entry)
+router.post('/', auth, async (req, res) => {
+    const { date, description, amount, category } = req.body || {};
+
+    if (!date || !description || amount === undefined || amount === null || !category) {
+        return res.status(400).json({ message: 'Missing fields' });
+    }
+
+    const amountNum = typeof amount === 'number' ? amount : Number(amount);
+    if (!Number.isFinite(amountNum)) {
+        return res.status(400).json({ message: 'amount must be number' });
+    }
+
+    // Placeholder za DB upis (za sada se ne radi)
+    return res.json({ message: 'OK' });
+});
+
 // POST /api/manual-entry/banka - Manual bank transaction entry
 router.post('/banka', auth, async (req, res) => {
     try {
@@ -48,4 +65,5 @@ router.get('/transactions', auth, async (req, res) => {
 });
 
 export default router;
+
 

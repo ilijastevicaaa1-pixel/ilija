@@ -92,6 +92,8 @@ import issuesRouter from "./routes/issues.js";
 import faktureBatchRouter from "./routes/faktureBatch.js";
 import aiRouter from "./routes/ai.js";
 import matchingRouter from "./routes/matching.js";
+import manualEntryRouter from "./routes/manualEntry.js";
+
 
 // Inicijalizacija baze i admin korisnika
 import initializeDatabase from "./dbInit.js";
@@ -146,6 +148,8 @@ app.use("/api/matching", matchingRouter);
 
 // AI faktura parser
 app.use("/api/ai", aiRouter);
+app.use("/api/manual-entry", manualEntryRouter);
+
 
 // LOGIN ruta
 app.use("/api", loginRouter);
