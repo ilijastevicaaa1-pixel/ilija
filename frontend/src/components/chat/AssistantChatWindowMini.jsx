@@ -5,15 +5,17 @@ let cat = null;
 let sub = null;
 
 async function askLlama(prompt) {
+    // Backend u ovom projektu očekuje { text: ... } i vraća { answer: ... }
     const res = await fetch("/api/ai/command", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt })
+        body: JSON.stringify({ text: prompt })
     });
 
     const data = await res.json();
-    return data.response || data.reply || "AI neodpovedá.";
+    return data.answer || data.response || data.reply || `AI greška: ${data?.error || ""}`;
 }
+
 
 async function executeOption(cat, sub, userInput) {
     // FAKTURÁCIA
