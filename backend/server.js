@@ -675,35 +675,42 @@ app.get('/api/statistics/income', async (req, res) => {
 
 // Statistika PDV-a po periodima
 // --- AI tumačenje glasovnih komandi sa ekstrakcijom entiteta ---
-app.post('/api/ai/command', async (req, res) => {
-  console.log('[AI/COMMAND] --- NOVI ZAHTEV ---');
-  console.log('[AI/COMMAND] process.env.GROQ_API_KEY:', process.env.GROQ_API_KEY ? 'POSTOJI' : 'NE POSTOJI');
-  const { text } = req.body;
-  console.log('[AI/COMMAND] Primljen tekst:', text);
-  console.log('[AI/COMMAND] Pripremam telo za GroqCloud...');
-  if (!text) return res.status(400).json({ error: 'Nedostaje tekst komande.' });
-  // Uklonjeno: Više nije potrebna provera za OPENAI_API_KEY, koristi se samo GROQ_API_KEY
+// app.post('/api/ai/command', async (req, res) => {
+// console.log('[AI/COMMAND] --- NOVI ZAHTEV ---');
+console.log('[AI/COMMAND] process.env.GROQ_API_KEY:', process.env.GROQ_API_KEY ? 'POSTOJI' : 'NE POSTOJI');
+const { text } = req.body;
+console.log('[AI/COMMAND] Primljen tekst:', text);
+console.log('[AI/COMMAND] Pripremam telo za GroqCloud...');
+if (!text) return res.status(400).json({ error: 'Nedostaje tekst komande.' });
+// Uklonjeno: Više nije potrebna provera za OPENAI_API_KEY, koristi se samo GROQ_API_KEY
 
-  // Novi čist system prompt
-  const systemPrompt = "Si slovenský účtovnícky asistent. Odpovedaj stručne a profesionálne.";
+// Novi čist system prompt
+const systemPrompt = "Si slovenský účtovnícky asistent. Odpovedaj stručne a profesionálne.";
 
-  // Helper za timeout
-  async function fetchWithTimeout(resource, options = {}, timeout = 20000) {
-    const controller = new AbortController();
-    const id = setTimeout(() => controller.abort(), timeout);
-    try {
-      const response = await nodeFetch(resource, { ...options, signal: controller.signal });
-      clearTimeout(id);
-      return response;
-    } catch (err) {
-      clearTimeout(id);
-      throw err;
-    }
-  }
-
+// Helper za timeout
+async function fetchWithTimeout(resource, options = {}, timeout = 20000) {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeout);
   try {
+    const response = await nodeFetch(resource, { ...options, signal: controller.signal });
+    clearTimeout(id);
+    return response;
+  } catch (err) {
+    clearTimeout(id);
+    throw err;
+  }
+}
 
-    // 1. AI odgovor (Llama-3.3-70B-Versatile, GroqCloud)
+
+
+// AI COMMAND — Llama-3.3-70B-Versatile (GroqCloud)
+app.post('/api/ai/command', async (req, res) => {
+  try {
+    const { text } = req.body;
+    if (!text) {
+      return res.status(400).json({ error: "Missing text field." });
+    }
+
     const aiBody = {
       model: 'Llama-3.3-70B-Versatile',
       messages: [
@@ -713,72 +720,62 @@ app.post('/api/ai/command', async (req, res) => {
       temperature: 0.2,
       max_tokens: 1024
     };
-    console.log('[AI/COMMAND] Šaljem zahtev GroqCloud Llama-3.3-70B-Versatile...');
+
+    console.log('[AI/COMMAND] Šaljem zahtev GroqCloud...');
     console.log('[AI/COMMAND] aiBody:', aiBody);
+
     let aiRes;
     try {
-      aiRes = await fetchWithTimeout('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.GROQ_API_KEY}`
+      aiRes = await fetchWithTimeout(
+        'https://api.groq.com/openai/v1/chat/completions',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${process.env.GROQ_API_KEY}`
+          },
+          body: JSON.stringify(aiBody)
         },
-        body: JSON.stringify(aiBody)
-      }, 20000);
+        20000
+      );
     } catch (err) {
-      console.error('[AI/COMMAND] FETCH ERROR (GroqCloud):', err);
+      console.error('[AI/COMMAND] FETCH ERROR:', err);
       return res.status(500).json({ error: 'Fetch error GroqCloud', details: err.message });
     }
+
     const aiData = await aiRes.json();
     console.log('[AI/COMMAND] aiRes.ok:', aiRes.ok);
     console.log('[AI/COMMAND] aiData:', aiData);
+
     if (!aiRes.ok) {
       console.error('[AI/COMMAND] Greška GroqCloud:', aiData);
       return res.status(500).json({ error: 'Greška GroqCloud API', details: aiData });
     }
-    // GroqCloud vraća odgovor u aiData.choices[0].message.content
+
     const aiAnswer = aiData.choices?.[0]?.message?.content?.trim() || '';
     console.log('[AI/COMMAND] AI odgovor:', aiAnswer);
 
-    // Loguj u bazu
+    // Log u bazu
     try {
       const db = await getDb?.();
-      if (db) await db.query('INSERT INTO logs (type, message, timestamp) VALUES ($1, $2, $3)', ['ai', `[AI/COMMAND] Upit: ${text}\nOdgovor: ${aiAnswer}`, new Date()]);
-    } catch (e) { console.log('Log error', e); }
+      if (db) {
+        await db.query(
+          'INSERT INTO logs (type, message, timestamp) VALUES ($1, $2, $3)',
+          ['ai', `[AI/COMMAND] Upit: ${text}\nOdgovor: ${aiAnswer}`, new Date()]
+        );
+      }
+    } catch (e) {
+      console.log('Log error', e);
+    }
 
-    res.json({ answer: aiAnswer });
+    return res.json({ answer: aiAnswer });
+
   } catch (err) {
     console.error('[AI/COMMAND] Fatalna greška:', err);
-    res.status(500).json({ error: 'Greška u AI obradi', details: err.message });
+    return res.status(500).json({ error: 'Greška u AI obradi', details: err.message });
   }
 });
 
-// GET /api/logs — prikaz logova
-app.get('/api/logs', async (req, res) => {
-  const db = await getDb();
-  const { rows } = await db.query('SELECT l.*, u.username FROM logs l LEFT JOIN users u ON l.user_id = u.id ORDER BY l.timestamp DESC');
-  res.json(rows);
-});
-// POST /api/users — dodavanje korisnika
-app.post('/api/users', auditLogMiddleware, async (req, res) => {
-  try {
-    const db = await getDb();
-    const { username, email, password } = req.body;
-    if (!username || !email || !password) {
-      return res.status(400).json({ error: 'Nedostaju obavezna polja.' });
-    }
-    const { rows: userRows } = await db.query('SELECT * FROM users WHERE email = $1 OR username = $2', [email, username]);
-    if (userRows.length > 0) {
-      return res.status(409).json({ error: 'Korisnik sa tim emailom ili username već postoji.' });
-    }
-    const hash = await bcrypt.hash(password, 10);
-    await db.query('INSERT INTO users (username, email, password_hash) VALUES ($1, $2, $3)', [username, email, hash]);
-    res.status(201).json({ message: 'Korisnik dodat.' });
-  } catch (err) {
-    console.error("Greška u POST /api/users:", err);
-    res.status(500).json({ error: "Greška na serveru." });
-  }
-});
 
 // GET /api/users — lista svih korisnika
 app.get('/api/users', async (req, res) => {

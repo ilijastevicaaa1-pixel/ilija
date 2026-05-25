@@ -4,30 +4,24 @@ import React, { useState } from "react";
 let cat = null;
 let sub = null;
 
-async function askLlama(prompt) {
-    // Backend u ovom projektu očekuje { text: ... } i vraća { answer: ... }
-    const res = await fetch("/api/ai/command", {
+// --- Llama poziv ---
+async function askLlama(text) {
+    const res = await fetch("http://localhost:3001/api/ai/command", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: prompt })
+        body: JSON.stringify({ text })   // OVO JE KLJUČ
     });
 
     const data = await res.json();
-    return data.answer || data.response || data.reply || `AI greška: ${data?.error || ""}`;
+    return data.answer || data.error || "AI neodpovedá.";
 }
 
-
+// --- Logika izvršavanja ---
 async function executeOption(cat, sub, userInput) {
-    // FAKTURÁCIA
     if (cat === "fakturacia" && sub === "A") {
         return await askLlama("Vytvor faktúru podľa údajov: " + userInput);
     }
 
-    if (cat === "fakturacia" && sub === "B") {
-        return "OCR placeholder (bez backendu).";
-    }
-
-    // BANKA
     if (cat === "banka" && sub === "A") {
         return await askLlama("Spracuj bankový výpis: " + userInput);
     }
@@ -35,6 +29,7 @@ async function executeOption(cat, sub, userInput) {
     return "Táto funkcia ešte nie je implementovaná.";
 }
 
+// --- MINI PROCESS ---
 export async function miniProcess(input) {
     const t = input.trim();
 
@@ -61,6 +56,7 @@ export async function miniProcess(input) {
             sub = "B";
             return "Vybral si B. Zadaj údaje.";
         }
+
         return "Pod-opcie: a, b";
     }
 
@@ -68,28 +64,32 @@ export async function miniProcess(input) {
     return await executeOption(cat, sub, t);
 }
 
-
-
+// --- UI KOMPONENTA ---
 export default function AssistantChatWindowMini() {
     const [messages, setMessages] = useState([
         { role: "assistant", text: "Menu: 1) fakturacia 2) banka" }
     ]);
     const [input, setInput] = useState("");
 
-    const onSend = () => {
+    const onSend = async () => {
         const trimmed = input.trim();
         if (!trimmed) return;
 
+        // Dodaj korisničku poruku
         setMessages(prev => [...prev, { role: "user", text: trimmed }]);
         setInput("");
 
-        const reply = miniProcess(trimmed);
+        // ČEKAJ miniProcess → OVO JE KLJUČ
+        const reply = await miniProcess(trimmed);
+
+        // Dodaj AI odgovor
         setMessages(prev => [...prev, { role: "assistant", text: reply }]);
     };
 
     return (
         <div style={{ padding: 16, maxWidth: 520, margin: "0 auto" }}>
             <h3>Mini asistent</h3>
+
             <div
                 style={{
                     border: "1px solid #ddd",
@@ -110,7 +110,7 @@ export default function AssistantChatWindowMini() {
                 <input
                     value={input}
                     onChange={e => setInput(e.target.value)}
-                    placeholder="1, 2, a, b"
+                    placeholder="1, 2, a, b alebo údaje"
                     style={{ flex: 1, padding: 8, borderRadius: 6, border: "1px solid #ccc" }}
                     onKeyDown={e => {
                         if (e.key === "Enter") onSend();
@@ -123,4 +123,5 @@ export default function AssistantChatWindowMini() {
         </div>
     );
 }
+
 

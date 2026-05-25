@@ -5,10 +5,8 @@ import { AuthProvider } from "./auth/AuthContext.jsx";
 import "./styles/chat-modern.css";   // ← OVO DODAJ
 
 ReactDOM.createRoot(document.getElementById("root")).render(
-  <React.StrictMode>
-    <AuthProvider>
-      <App />
-    </AuthProvider>
-  </React.StrictMode>
+  <AuthProvider>
+    <App />
+  </AuthProvider>
 );
-k
+
