@@ -93,36 +93,38 @@ router.post('/command', verifyToken, async (req, res) => {
     }
 
     async function executeAction(action, params) {
+      const ERP_API_URL = process.env.ERP_API_URL || "http://localhost:3001";
+
       switch (action) {
         case "LIST_INVOICES":
-          return await fetch("http://localhost:3001/api/fakture").then(r => r.json());
+          return await fetch(`${ERP_API_URL}/api/fakture`).then(r => r.json());
 
         case "ANALYZE_VAT":
-          return await fetch("http://localhost:3001/api/vat/analyze", {
+          return await fetch(`${ERP_API_URL}/api/vat/analyze`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(params)
           }).then(r => r.json());
 
         case "SUGGEST_LEDGER":
-          return await fetch("http://localhost:3001/api/ledger/suggest", {
+          return await fetch(`${ERP_API_URL}/api/ledger/suggest`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(params)
           }).then(r => r.json());
 
         case "MONTHLY_REPORT":
-          return await fetch("http://localhost:3001/api/reports/monthly").then(r => r.json());
+          return await fetch(`${ERP_API_URL}/api/reports/monthly`).then(r => r.json());
 
         case "YEARLY_REPORT":
-          return await fetch("http://localhost:3001/api/reports/yearly").then(r => r.json());
+          return await fetch(`${ERP_API_URL}/api/reports/yearly`).then(r => r.json());
 
         case "CUSTOM_REPORT":
-          return await fetch(`http://localhost:3001/api/reports/custom?dateFrom=${params.dateFrom}&dateTo=${params.dateTo}`)
+          return await fetch(`${ERP_API_URL}/api/reports/custom?dateFrom=${params.dateFrom}&dateTo=${params.dateTo}`)
             .then(r => r.json());
 
         case "MATCH_BANK":
-          return await fetch("http://localhost:3001/api/matching", {
+          return await fetch(`${ERP_API_URL}/api/matching`, {
             method: "POST"
           }).then(r => r.json());
 
@@ -130,6 +132,7 @@ router.post('/command', verifyToken, async (req, res) => {
           return { message: "Neznáma akcia." };
       }
     }
+
 
     // ===============================
     //  PRIPREMA PORUKA SA KONTEKSTOM
