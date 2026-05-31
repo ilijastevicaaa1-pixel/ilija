@@ -25,24 +25,50 @@ console.log("========================");
 // KONFIGURACIJA POOLA
 // =========================
 const poolConfig = process.env.DATABASE_URL
-  ? {
-    connectionString: process.env.DATABASE_URL,
-    ssl: process.env.DATABASE_URL.toLowerCase().includes('sslmode=require')
-      ? { rejectUnauthorized: false }
-      : undefined
-  }
-  : {
-    host: process.env.PG_HOST,
-    user: process.env.PG_USER,
-    password: process.env.PG_PASSWORD,
-    database: process.env.PG_DATABASE,
-    port: Number(process.env.PG_PORT) || 5432,
-    ssl: { rejectUnauthorized: false }
-  };
+  ? (() => {
+    const databaseUrl = process.env.DATABASE_URL;
+    return {
+      connectionString: databaseUrl,
+      ssl: databaseUrl.toLowerCase().includes('sslmode=require')
+        ? { rejectUnauthorized: false }
+        : undefined,
+    };
+  })()
+  : (() => {
+    const pgHost = process.env.PG_HOST;
+    const pgUser = process.env.PG_USER;
+    const pgPassword = process.env.PG_PASSWORD;
+    const pgDatabase = process.env.PG_DATABASE;
+
+    const hasAllCreds = pgHost && pgUser && typeof pgPassword === 'string' && pgPassword.length > 0 && pgDatabase;
+
+    if (!hasAllCreds) {
+      // Avoid pg-pool throwing during startup if credentials are missing.
+      // Use a clearly invalid password type so pg-pool won't crash while parsing.
+      return {
+        host: pgHost,
+        user: pgUser,
+        password: '',
+        database: pgDatabase,
+        port: Number(process.env.PG_PORT) || 5432,
+      };
+    }
+
+
+    return {
+      host: pgHost,
+      user: pgUser,
+      password: pgPassword,
+      database: pgDatabase,
+      port: Number(process.env.PG_PORT) || 5432,
+      ssl: undefined,
+    };
+  })();
 
 console.log("=== DEBUG POOL CONFIG ===");
 console.log(poolConfig);
 console.log("========================");
+
 
 const pool = new Pool(poolConfig);
 

@@ -1,16 +1,7 @@
 # TODO
 
-## Step 1: Patch login.js
-- [x] Update `backend/routes/login.js` to use safe secret sourcing (fallback to `dev_secret_key` if missing)
-- [x] Add explicit runtime validation + clear error handling if secret is missing
-
-## Step 2: Push redeploy
-- [x] Commit changes
-- [ ] Push to the repo
-- [ ] Trigger Render Deploy latest commit or Restart service
-
-## Step 3: Verify
-- [ ] Confirm logs no longer show: `secretOrPrivateKey must have a value`
-- [ ] Verify frontend login returns token
-- [ ] Verify auth-protected routes work
+- [ ] Fix PostgreSQL SSL initialization error by adjusting `backend/db.js` pool SSL handling for `DATABASE_URL`.
+- [ ] Confirm local run succeeds without database env vars.
+- [ ] If needed, add fallback logic for SSL params and improve debug output.
+- [ ] Run `npm test` / `node server.js` (where applicable) to validate.
 
