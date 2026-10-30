@@ -1,0 +1,7 @@
+{
+  "provider": "groq",
+  "voice": {
+    "autoStart": true,
+    "readAloud": true
+  }
+}

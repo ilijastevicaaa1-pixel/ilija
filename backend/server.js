@@ -91,6 +91,7 @@ import issuesRouter from "./routes/issues.js";
 import faktureBatchRouter from "./routes/faktureBatch.js";
 import aiRouter from "./routes/ai.js";
 import assistantApi from "./assistant-api/router.js";
+import {createWorkspaceBridge} from "./workspace-bridge.js";
 import matchingRouter from "./routes/matching.js";
 
 // Inicijalizacija baze i admin korisnika
@@ -135,6 +136,7 @@ app.use((req, res, next) => {
 
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
 app.use("/api", assistantApi);
+app.use(createWorkspaceBridge(getDb));
 app.use("/audio", express.static("audio"));
 
 app.use("/api/upload/pdf", pdfUploadRouter);

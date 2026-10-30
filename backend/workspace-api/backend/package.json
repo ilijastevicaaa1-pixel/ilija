@@ -1,0 +1,35 @@
+{
+  "type": "module",
+  "name": "knjigovotstvo-backend",
+  "version": "1.0.0",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test --test-concurrency=1 test/core.test.mjs test/openai.test.mjs test/validation.test.mjs test/groq.test.mjs test/documents.test.mjs test/invoice-pdf.test.mjs test/backups.test.mjs test/billing.test.mjs test/ai-draft.test.mjs test/invoice-checks.test.mjs",
+    "dev": "node --watch server.js",
+    "backup:restore": "node restore-backup.js",
+    "assistant:local": "node assistant-local.mjs"
+  },
+  "dependencies": {
+    "@napi-rs/canvas": "^0.1.100",
+    "bcrypt": "^6.0.0",
+    "cors": "^2.8.5",
+    "csv-parse": "^7.0.3",
+    "dotenv": "^17.3.1",
+    "express": "^4.18.2",
+    "image-size": "^2.0.4",
+    "jsonwebtoken": "^9.0.3",
+    "multer": "^2.1.1",
+    "openai": "^6.32.0",
+    "pdfjs-dist": "^6.4.299",
+    "pdfkit": "^0.20.2",
+    "pg": "^8.20.0",
+    "tesseract.js": "^7.0.0"
+  },
+  "devDependencies": {
+    "supertest": "^7.2.2"
+  },
+  "engines": {
+    "node": ">=22.13.0"
+  }
+}
