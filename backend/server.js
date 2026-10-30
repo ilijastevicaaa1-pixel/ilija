@@ -90,11 +90,11 @@ import receiptsRouter from "./routes/receipts.js";
 import issuesRouter from "./routes/issues.js";
 import faktureBatchRouter from "./routes/faktureBatch.js";
 import aiRouter from "./routes/ai.js";
+import assistantApi from "./assistant-api/router.js";
 import matchingRouter from "./routes/matching.js";
 
 // Inicijalizacija baze i admin korisnika
-import initializeDatabase from "./dbInit.js";
-initializeDatabase();
+// Existing production schema is preserved: no startup initialization or migrations.
 
 // Inicijalizacija Express aplikacije
 const app = express();
@@ -134,6 +134,7 @@ app.use((req, res, next) => {
 });
 
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
+app.use("/api", assistantApi);
 app.use("/audio", express.static("audio"));
 
 app.use("/api/upload/pdf", pdfUploadRouter);
